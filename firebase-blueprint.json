@@ -1,0 +1,165 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile containing account information and preferences.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Unique Firebase Authentication UID of the user.",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email address of the user.",
+          "maxLength": 256
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Full name or studio name of the user.",
+          "maxLength": 120
+        },
+        "role": {
+          "type": "string",
+          "description": "Account role such as freelancer, designer, or agency.",
+          "maxLength": 64
+        },
+        "storageUsedBytes": {
+          "type": "number",
+          "description": "Aggregated storage size in bytes."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of account registration."
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last profile update."
+        }
+      },
+      "required": ["userId", "email", "displayName"]
+    },
+    "VaultFile": {
+      "title": "VaultFile",
+      "description": "File record uploaded by or for a client project.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique file identifier.",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner UID who uploaded or owns the file portal.",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Original file name.",
+          "maxLength": 255
+        },
+        "size": {
+          "type": "number",
+          "description": "File size in bytes."
+        },
+        "type": {
+          "type": "string",
+          "description": "MIME type of the file.",
+          "maxLength": 128
+        },
+        "category": {
+          "type": "string",
+          "description": "Category tag e.g. Deliverable, Invoice, Asset, Draft.",
+          "maxLength": 64
+        },
+        "clientName": {
+          "type": "string",
+          "description": "Target client name or company.",
+          "maxLength": 120
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional notes or instructions for the client.",
+          "maxLength": 1000
+        },
+        "isStarred": {
+          "type": "boolean",
+          "description": "Whether file is pinned or starred."
+        },
+        "downloadCount": {
+          "type": "number",
+          "description": "Times the file was downloaded."
+        },
+        "previewDataUrl": {
+          "type": "string",
+          "description": "Optional small thumbnail data or preview string.",
+          "maxLength": 20480
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when file was uploaded."
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when file was last modified."
+        }
+      },
+      "required": ["id", "userId", "name", "size", "type", "clientName"]
+    },
+    "ClientProject": {
+      "title": "ClientProject",
+      "description": "Client directory grouping files.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique project identifier.",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner UID of the project.",
+          "maxLength": 128
+        },
+        "clientName": {
+          "type": "string",
+          "description": "Client or company name.",
+          "maxLength": 120
+        },
+        "projectName": {
+          "type": "string",
+          "description": "Project title or brief.",
+          "maxLength": 120
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when project was created."
+        }
+      },
+      "required": ["id", "userId", "clientName", "projectName"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Private user account profile and storage quota info."
+    },
+    "/users/{userId}/files/{fileId}": {
+      "schema": {
+        "$ref": "#/entities/VaultFile"
+      },
+      "description": "Files securely isolated per user client portal."
+    },
+    "/users/{userId}/projects/{projectId}": {
+      "schema": {
+        "$ref": "#/entities/ClientProject"
+      },
+      "description": "Client projects created by the freelancer/designer."
+    }
+  }
+}

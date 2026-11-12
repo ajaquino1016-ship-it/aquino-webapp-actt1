@@ -1,0 +1,6 @@
+{
+  "name": "AVault - Client File Portal",
+  "description": "Secure client file portal for freelancers and designers to upload, manage, and share client deliverables and assets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

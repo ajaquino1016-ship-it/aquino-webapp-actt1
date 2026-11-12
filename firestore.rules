@@ -1,0 +1,116 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation for UserProfile
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['userId', 'email', 'displayName']) &&
+             data.keys().hasOnly(['userId', 'email', 'displayName', 'role', 'companyOrStudio', 'storageUsedBytes', 'createdAt', 'updatedAt']) &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.email is string && data.email.size() <= 256 &&
+             data.displayName is string && data.displayName.size() <= 120 &&
+             (!('role' in data) || (data.role is string && data.role.size() <= 64)) &&
+             (!('companyOrStudio' in data) || (data.companyOrStudio is string && data.companyOrStudio.size() <= 120)) &&
+             (!('storageUsedBytes' in data) || (data.storageUsedBytes is number && data.storageUsedBytes >= 0)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    // Validation for VaultFile
+    function isValidVaultFile(data) {
+      return data.keys().hasAll(['id', 'userId', 'name', 'size', 'type', 'clientName']) &&
+             data.keys().hasOnly(['id', 'userId', 'name', 'size', 'type', 'category', 'clientName', 'notes', 'isStarred', 'downloadCount', 'previewDataUrl', 'createdAt', 'updatedAt']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 255 &&
+             data.size is number && data.size >= 0 &&
+             data.type is string && data.type.size() <= 128 &&
+             data.clientName is string && data.clientName.size() <= 120 &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 64)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000)) &&
+             (!('isStarred' in data) || data.isStarred is bool) &&
+             (!('downloadCount' in data) || (data.downloadCount is number && data.downloadCount >= 0)) &&
+             (!('previewDataUrl' in data) || (data.previewDataUrl is string && data.previewDataUrl.size() <= 20480)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    // Validation for ClientProject
+    function isValidClientProject(data) {
+      return data.keys().hasAll(['id', 'userId', 'clientName', 'projectName']) &&
+             data.keys().hasOnly(['id', 'userId', 'clientName', 'projectName', 'createdAt']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.clientName is string && data.clientName.size() <= 120 &&
+             data.projectName is string && data.projectName.size() <= 120 &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64));
+    }
+
+    // User Profile matching
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false; // PII protection: disable listing users
+      allow create: if isOwner(userId) && isValidId(userId) &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().userId == request.auth.uid;
+      allow update: if isOwner(userId) && isValidId(userId) &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().userId == existing().userId;
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // Subcollection: Files uploaded by this user
+      match /files/{fileId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId) && isValidId(fileId);
+        allow create: if isOwner(userId) && isValidId(fileId) &&
+                         isValidVaultFile(incoming()) &&
+                         incoming().userId == request.auth.uid;
+        allow update: if isOwner(userId) && isValidId(fileId) &&
+                         isValidVaultFile(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().id == existing().id;
+        allow delete: if isOwner(userId) && isValidId(fileId);
+      }
+
+      // Subcollection: Client Projects
+      match /projects/{projectId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId) && isValidId(projectId);
+        allow create: if isOwner(userId) && isValidId(projectId) &&
+                         isValidClientProject(incoming()) &&
+                         incoming().userId == request.auth.uid;
+        allow update: if isOwner(userId) && isValidId(projectId) &&
+                         isValidClientProject(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().id == existing().id;
+        allow delete: if isOwner(userId) && isValidId(projectId);
+      }
+    }
+  }
+}
