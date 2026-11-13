@@ -3,19 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AVault - Secure Client File Portal</title>
-    <meta name="description" content="A secure client file portal for freelancers and designers to manage, upload, and organize client project assets." />
-    <meta property="og:title" content="AVault - Secure Client File Portal" />
-    <meta property="og:description" content="A secure client file portal for freelancers and designers to manage, upload, and organize client project assets." />
+    <title>PantryAI — Turn Ingredients Into Recipe Ideas</title>
+    <meta name="description" content="PantryAI turns the ingredients you already have into realistic recipe ideas using Gemini AI, including missing grocery items and nutrition estimates." />
+    <meta property="og:title" content="PantryAI — Turn Ingredients Into Recipe Ideas" />
+    <meta property="og:description" content="Tell PantryAI what ingredients you have by typing or snapping a photo, and get 3 tailored recipes with step-by-step instructions." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..600&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('pantryai_theme');
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (saved === 'dark' || (!saved && prefersDark)) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="font-sans antialiased selection:bg-red-900 selection:text-white">
+  <body class="font-sans antialiased bg-[#EDEEE9] text-[#3D4547] dark:bg-[#191E1F] dark:text-[#EDEEE9] transition-colors duration-200 selection:bg-[#9C9F52] selection:text-[#191E1F]">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

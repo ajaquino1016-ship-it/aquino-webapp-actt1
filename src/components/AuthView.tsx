@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import {
-  ShieldCheck,
+  Leaf,
   Lock,
   Mail,
   User,
@@ -13,8 +13,7 @@ import {
   Moon,
   Sparkles,
   CheckCircle2,
-  FolderLock,
-  FileCheck2,
+  Utensils,
 } from 'lucide-react';
 
 export function AuthView() {
@@ -25,7 +24,7 @@ export function AuthView() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [role, setRole] = useState('Freelance Designer');
+  const [role, setRole] = useState('Home Cook');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -45,7 +44,7 @@ export function AuthView() {
     }
 
     if (mode === 'signup' && !displayName.trim()) {
-      setErrorMsg('Please enter your full name or studio title.');
+      setErrorMsg('Please enter your name.');
       return;
     }
 
@@ -58,7 +57,11 @@ export function AuthView() {
       }
     } catch (err: unknown) {
       const anyErr = err as { code?: string; message?: string };
-      if (anyErr?.code === 'auth/invalid-credential' || anyErr?.code === 'auth/wrong-password' || anyErr?.code === 'auth/user-not-found') {
+      if (
+        anyErr?.code === 'auth/invalid-credential' ||
+        anyErr?.code === 'auth/wrong-password' ||
+        anyErr?.code === 'auth/user-not-found'
+      ) {
         setErrorMsg('Invalid email or password. Please verify your credentials or create an account.');
       } else if (anyErr?.code === 'auth/email-already-in-use') {
         setErrorMsg('An account with this email already exists. Try signing in instead.');
@@ -101,109 +104,109 @@ export function AuthView() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-200">
-      {/* Dark Red Brand Hero Panel */}
-      <div className="lg:w-5/12 bg-gradient-to-br from-[#450a0a] via-[#5c0e18] to-[#7f1d1d] text-white p-8 lg:p-12 flex flex-col justify-between relative overflow-hidden border-b lg:border-b-0 lg:border-r border-red-950/60 shadow-2xl">
-        {/* Subtle decorative geometric backdrop */}
-        <div className="absolute -right-20 -bottom-20 w-80 h-80 rounded-full bg-red-600/10 blur-3xl pointer-events-none" />
-        <div className="absolute -left-10 -top-10 w-60 h-60 rounded-full bg-rose-500/10 blur-2xl pointer-events-none" />
-
-        {/* Top Header */}
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-[#EDEEE9] dark:bg-[#191E1F] text-[#3D4547] dark:text-[#EDEEE9] transition-colors duration-200">
+      {/* Left Editorial Brand Panel */}
+      <aside className="lg:w-5/12 bg-[#ECD0C2] dark:bg-[#292F2D] text-[#3D4547] dark:text-[#EDEEE9] p-8 lg:p-12 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#3D4547]/15 dark:border-[#424844] transition-colors duration-200">
+        <div>
+          <div className="flex items-center justify-between mb-10">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-lg text-white">
-                <ShieldCheck className="w-6 h-6 text-red-200" />
+              <div className="w-10 h-10 rounded-lg bg-[#3D4547] dark:bg-[#B5B86F] text-[#EDEEE9] dark:text-[#191E1F] flex items-center justify-center">
+                <Leaf className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-2xl font-extrabold tracking-tight text-white flex items-center gap-1">
-                  AVault
-                  <span className="w-2 h-2 rounded-full bg-red-400 inline-block ml-0.5 animate-pulse" />
+                <span className="font-serif text-2xl font-semibold tracking-tight text-[#3D4547] dark:text-[#EDEEE9] block leading-none">
+                  PantryAI
                 </span>
-                <p className="text-xs uppercase tracking-widest text-red-200 font-medium">Client File Portal</p>
+                <p className="text-xs text-[#535C5E] dark:text-[#B8B9AF] mt-1 tracking-wide">
+                  Kitchen Companion
+                </p>
               </div>
             </div>
 
             <button
+              type="button"
               onClick={toggleTheme}
-              aria-label="Toggle theme"
-              className="p-2.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-red-100 transition"
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
               title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg border border-[#3D4547]/20 dark:border-[#424844] bg-[#EDEEE9]/70 dark:bg-[#343A36] hover:bg-[#EDEEE9] dark:hover:bg-[#3E4540] text-[#3D4547] dark:text-[#EDEEE9] transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9C9F52] dark:focus-visible:outline-[#B5B86F]"
             >
-              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {isDark ? <Sun className="w-4 h-4 text-[#B5B86F]" /> : <Moon className="w-4 h-4" />}
             </button>
           </div>
 
-          <div className="mt-8 lg:mt-16 space-y-4">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-900/60 border border-red-500/30 text-red-100">
-              <FolderLock className="w-3.5 h-3.5 text-red-300" />
-              Engineered for Freelancers & Creatives
-            </span>
-            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-white leading-tight">
-              Let your clients securely upload, review, and retrieve files.
+          <div className="mt-6 lg:mt-14 space-y-5">
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-[#B42B2F] dark:text-[#D65356]">
+              Seasonal &amp; Everyday Cooking
+            </p>
+            <h1 className="font-serif text-3xl lg:text-4xl font-semibold tracking-tight text-[#3D4547] dark:text-[#EDEEE9] leading-[1.2] text-balance">
+              Turn the ingredients in your kitchen into thoughtful meals.
             </h1>
-            <p className="text-sm lg:text-base text-red-100/90 leading-relaxed max-w-md">
-              No lost email attachments or chaotic link trees. AVault gives you a branded client portal with dedicated project isolation and instant downloads.
+            <p className="text-sm lg:text-base text-[#535C5E] dark:text-[#B8B9AF] leading-relaxed max-w-md">
+              Type what you have or photograph your pantry. PantryAI pairs your ingredients with three tailored recipes and notes only the essentials left to pick up.
             </p>
           </div>
         </div>
 
-        {/* Value Points */}
-        <div className="relative z-10 my-8 space-y-3.5 pt-6 border-t border-red-800/60">
+        {/* Editorial Highlights */}
+        <div className="my-8 space-y-4 pt-6 border-t border-[#3D4547]/15 dark:border-[#424844]">
           <div className="flex items-start gap-3">
-            <CheckCircle2 className="w-5 h-5 text-red-300 shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-5 h-5 text-[#6E7234] dark:text-[#B5B86F] shrink-0 mt-0.5" />
             <div>
-              <p className="text-xs lg:text-sm font-semibold text-white">Dedicated Client File Isolation</p>
-              <p className="text-xs text-red-200/80">Every file is protected with Firestore security rules per user vault.</p>
+              <p className="text-sm font-medium text-[#3D4547] dark:text-[#EDEEE9]">
+                Strict dietary &amp; time filters
+              </p>
+              <p className="text-xs text-[#535C5E] dark:text-[#B8B9AF]">
+                Tailored to your schedule, servings, and pantry staples.
+              </p>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <FileCheck2 className="w-5 h-5 text-red-300 shrink-0 mt-0.5" />
+            <Utensils className="w-5 h-5 text-[#6E7234] dark:text-[#B5B86F] shrink-0 mt-0.5" />
             <div>
-              <p className="text-xs lg:text-sm font-semibold text-white">Full Fidelity Binary Downloads</p>
-              <p className="text-xs text-red-200/80">Original file preservation with quick visual thumbnail previews.</p>
+              <p className="text-sm font-medium text-[#3D4547] dark:text-[#EDEEE9]">
+                Personal recipe archive
+              </p>
+              <p className="text-xs text-[#535C5E] dark:text-[#B8B9AF]">
+                Save favorites, copy missing grocery lists, and revisit past searches.
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Footer Note */}
-        <div className="relative z-10 pt-4 text-xs text-red-200/60 flex items-center justify-between">
-          <span>AVault v2.4 Enterprise Portal</span>
-          <span className="flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5 text-red-300" /> AES-256 Client Security
-          </span>
+        <div className="pt-4 text-xs text-[#535C5E] dark:text-[#B8B9AF] flex items-center justify-between border-t border-[#3D4547]/10 dark:border-[#424844]/60">
+          <span>PantryAI</span>
+          <span className="text-[#B42B2F] dark:text-[#D9B9AA]">Curated Recipe Journal</span>
         </div>
-      </div>
+      </aside>
 
-      {/* Auth Form Area */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
+      {/* Right Auth Card Area */}
+      <main className="flex-1 flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md">
-          {/* Card Container */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-800 p-8 sm:p-10 transition-colors">
-            {/* Header Switch */}
-            <div className="mb-6 text-center">
-              <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                {mode === 'signin' ? 'Sign In to AVault' : 'Create an Account'}
+          <div className="bg-[#F5F5F1] dark:bg-[#292F2D] rounded-xl border border-[#3D4547]/15 dark:border-[#424844] p-7 sm:p-9 transition-colors duration-200">
+            {/* Header */}
+            <div className="mb-6 text-center space-y-1">
+              <h2 className="font-serif text-2xl font-semibold tracking-tight text-[#3D4547] dark:text-[#EDEEE9]">
+                {mode === 'signin' ? 'Sign In to PantryAI' : 'Create an Account'}
               </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              <p className="text-sm text-[#535C5E] dark:text-[#B8B9AF]">
                 {mode === 'signin'
-                  ? 'Enter your credentials to access your client portal'
-                  : 'Start sharing deliverables with your clients today'}
+                  ? 'Welcome back to your personal pantry'
+                  : 'Save your favorite recipes and pantry searches'}
               </p>
             </div>
 
             {/* Mode Switch Tabs */}
-            <div className="flex p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl mb-6">
+            <div className="grid grid-cols-2 p-1 bg-[#EDEEE9] dark:bg-[#191E1F] border border-[#3D4547]/12 dark:border-[#424844] rounded-lg mb-6">
               <button
                 type="button"
                 onClick={() => {
                   setMode('signin');
                   setErrorMsg(null);
                 }}
-                className={`flex-1 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
+                className={`min-h-[40px] py-2 text-xs sm:text-sm font-medium rounded-md transition-colors cursor-pointer ${
                   mode === 'signin'
-                    ? 'bg-white dark:bg-slate-900 text-red-950 dark:text-white shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
+                    ? 'bg-[#3D4547] text-[#EDEEE9] dark:bg-[#B5B86F] dark:text-[#191E1F]'
+                    : 'text-[#535C5E] dark:text-[#B8B9AF] hover:text-[#3D4547] dark:hover:text-[#EDEEE9]'
                 }`}
               >
                 Sign In
@@ -214,43 +217,46 @@ export function AuthView() {
                   setMode('signup');
                   setErrorMsg(null);
                 }}
-                className={`flex-1 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
+                className={`min-h-[40px] py-2 text-xs sm:text-sm font-medium rounded-md transition-colors cursor-pointer ${
                   mode === 'signup'
-                    ? 'bg-white dark:bg-slate-900 text-red-950 dark:text-white shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
+                    ? 'bg-[#3D4547] text-[#EDEEE9] dark:bg-[#B5B86F] dark:text-[#191E1F]'
+                    : 'text-[#535C5E] dark:text-[#B8B9AF] hover:text-[#3D4547] dark:hover:text-[#EDEEE9]'
                 }`}
               >
                 Create Account
               </button>
             </div>
 
-            {/* Error Message */}
+            {/* Error Alert */}
             {errorMsg && (
-              <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300 text-xs sm:text-sm flex items-start gap-2.5 animate-fadeIn">
-                <span className="text-red-500 font-bold shrink-0">!</span>
+              <div
+                role="alert"
+                className="mb-5 p-3.5 rounded-lg bg-[#ECD0C2]/70 dark:bg-[#343A36] border border-[#B42B2F]/40 dark:border-[#D65356]/50 text-[#B42B2F] dark:text-[#D65356] text-xs sm:text-sm flex items-start gap-2.5"
+              >
+                <span className="font-semibold shrink-0">!</span>
                 <span>{errorMsg}</span>
               </div>
             )}
 
-            {/* Quick Demo Button for effortless testing */}
+            {/* Quick Demo Account */}
             <div className="mb-5">
               <button
                 type="button"
                 onClick={handleDemoLogin}
                 disabled={loading}
-                className="w-full py-2.5 px-4 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50/70 dark:bg-red-950/30 hover:bg-red-100/70 dark:hover:bg-red-950/60 text-red-900 dark:text-red-200 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition cursor-pointer shadow-sm disabled:opacity-50"
+                className="w-full min-h-[44px] py-2.5 px-4 rounded-lg bg-[#9C9F52] hover:bg-[#8B8E47] text-[#191E1F] dark:bg-transparent dark:border dark:border-[#B5B86F] dark:text-[#EDEEE9] dark:hover:bg-[#B5B86F]/10 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9C9F52]"
               >
-                <Sparkles className="w-4 h-4 text-red-600 dark:text-red-400" />
+                <Sparkles className="w-4 h-4" />
                 <span>One-Click Demo Account (Alex Rivera)</span>
               </button>
             </div>
 
             <div className="relative flex py-2 items-center mb-5">
-              <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
-              <span className="flex-shrink mx-3 text-xs uppercase font-medium tracking-wider text-slate-400 dark:text-slate-500">
+              <div className="flex-grow border-t border-[#3D4547]/15 dark:border-[#424844]" />
+              <span className="flex-shrink mx-3 text-xs tracking-wide text-[#535C5E] dark:text-[#B8B9AF]">
                 Or continue with email
               </span>
-              <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+              <div className="flex-grow border-t border-[#3D4547]/15 dark:border-[#424844]" />
             </div>
 
             {/* Form */}
@@ -258,84 +264,98 @@ export function AuthView() {
               {mode === 'signup' && (
                 <>
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
-                      Your Full Name or Studio
+                    <label
+                      htmlFor="auth-name"
+                      className="block text-xs font-medium text-[#535C5E] dark:text-[#B8B9AF] mb-1.5"
+                    >
+                      Your Name
                     </label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#535C5E] dark:text-[#B8B9AF]">
                         <User className="w-4 h-4" />
                       </div>
                       <input
+                        id="auth-name"
                         type="text"
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
-                        placeholder="e.g. Jordan Lee / Studio Apex"
-                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-800/40 focus:border-red-800 transition"
+                        placeholder="e.g. Jordan Lee"
+                        className="w-full min-h-[44px] pl-10 pr-4 py-2.5 bg-[#EDEEE9] dark:bg-[#191E1F] border border-[#3D4547]/20 dark:border-[#424844] rounded-lg text-sm text-[#3D4547] dark:text-[#EDEEE9] placeholder-[#535C5E]/60 dark:placeholder-[#B8B9AF]/50 focus:outline-none focus:border-[#9C9F52] dark:focus:border-[#B5B86F] transition-colors"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
-                      Your Role
+                    <label
+                      htmlFor="auth-role"
+                      className="block text-xs font-medium text-[#535C5E] dark:text-[#B8B9AF] mb-1.5"
+                    >
+                      Cooking Style
                     </label>
                     <select
+                      id="auth-role"
                       value={role}
                       onChange={(e) => setRole(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-800/40 focus:border-red-800 transition text-slate-700 dark:text-slate-200"
+                      className="w-full min-h-[44px] px-3.5 py-2.5 bg-[#EDEEE9] dark:bg-[#191E1F] border border-[#3D4547]/20 dark:border-[#424844] rounded-lg text-sm text-[#3D4547] dark:text-[#EDEEE9] focus:outline-none focus:border-[#9C9F52] dark:focus:border-[#B5B86F] transition-colors"
                     >
-                      <option value="Freelance Designer">Freelance Designer</option>
-                      <option value="Design Studio / Agency">Design Studio / Agency</option>
-                      <option value="Brand Identity Consultant">Brand Identity Consultant</option>
-                      <option value="Web & UI/UX Developer">Web & UI/UX Developer</option>
-                      <option value="Freelance Photographer/Videographer">Freelance Photographer/Videographer</option>
-                      <option value="Client Reviewer">Client Reviewer</option>
+                      <option value="Home Cook">Home Cook</option>
+                      <option value="Busy Weeknight Chef">Busy Weeknight Chef</option>
+                      <option value="Meal Prepper">Meal Prepper</option>
+                      <option value="Plant-Based Explorer">Plant-Based Explorer</option>
                     </select>
                   </div>
                 </>
               )}
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                <label
+                  htmlFor="auth-email"
+                  className="block text-xs font-medium text-[#535C5E] dark:text-[#B8B9AF] mb-1.5"
+                >
                   Email Address
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#535C5E] dark:text-[#B8B9AF]">
                     <Mail className="w-4 h-4" />
                   </div>
                   <input
+                    id="auth-email"
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@domain.com"
                     autoComplete="email"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-800/40 focus:border-red-800 transition text-slate-900 dark:text-slate-100"
+                    className="w-full min-h-[44px] pl-10 pr-4 py-2.5 bg-[#EDEEE9] dark:bg-[#191E1F] border border-[#3D4547]/20 dark:border-[#424844] rounded-lg text-sm text-[#3D4547] dark:text-[#EDEEE9] placeholder-[#535C5E]/60 dark:placeholder-[#B8B9AF]/50 focus:outline-none focus:border-[#9C9F52] dark:focus:border-[#B5B86F] transition-colors"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                <label
+                  htmlFor="auth-password"
+                  className="block text-xs font-medium text-[#535C5E] dark:text-[#B8B9AF] mb-1.5"
+                >
                   Password
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#535C5E] dark:text-[#B8B9AF]">
                     <Lock className="w-4 h-4" />
                   </div>
                   <input
+                    id="auth-password"
                     type={showPassword ? 'text' : 'password'}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-                    className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-800/40 focus:border-red-800 transition text-slate-900 dark:text-slate-100"
+                    className="w-full min-h-[44px] pl-10 pr-11 py-2.5 bg-[#EDEEE9] dark:bg-[#191E1F] border border-[#3D4547]/20 dark:border-[#424844] rounded-lg text-sm text-[#3D4547] dark:text-[#EDEEE9] placeholder-[#535C5E]/60 dark:placeholder-[#B8B9AF]/50 focus:outline-none focus:border-[#9C9F52] dark:focus:border-[#B5B86F] transition-colors"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    className="absolute inset-y-0 right-0 px-3 flex items-center text-[#535C5E] dark:text-[#B8B9AF] hover:text-[#3D4547] dark:hover:text-[#EDEEE9] cursor-pointer"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -346,10 +366,10 @@ export function AuthView() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-red-800 to-red-900 hover:from-red-900 hover:to-red-950 text-white font-semibold text-sm shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full min-h-[46px] mt-2 py-2.5 px-4 rounded-lg bg-[#3D4547] hover:bg-[#2F3638] text-[#EDEEE9] dark:bg-[#B5B86F] dark:hover:bg-[#C3C67E] dark:text-[#191E1F] font-medium text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9C9F52]"
               >
                 {loading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
                 ) : (
                   <>
                     <span>{mode === 'signin' ? 'Sign In' : 'Create an Account'}</span>
@@ -359,15 +379,15 @@ export function AuthView() {
               </button>
             </form>
 
-            {/* Google Login Option */}
+            {/* Google Login */}
             <div className="mt-4">
               <button
                 type="button"
                 onClick={handleGoogleLogin}
                 disabled={loading}
-                className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
+                className="w-full min-h-[44px] py-2.5 px-4 rounded-lg border border-[#3D4547]/20 dark:border-[#424844] bg-[#EDEEE9] dark:bg-[#191E1F] hover:bg-[#ECD0C2]/40 dark:hover:bg-[#343A36] text-[#3D4547] dark:text-[#EDEEE9] text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
                   <path
                     fill="#4285F4"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -389,8 +409,8 @@ export function AuthView() {
               </button>
             </div>
 
-            {/* Bottom prompt */}
-            <div className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
+            {/* Footer toggle */}
+            <div className="mt-6 text-center text-xs text-[#535C5E] dark:text-[#B8B9AF]">
               {mode === 'signin' ? (
                 <span>
                   Don&apos;t have an account?{' '}
@@ -400,7 +420,7 @@ export function AuthView() {
                       setMode('signup');
                       setErrorMsg(null);
                     }}
-                    className="text-red-700 dark:text-red-400 font-semibold hover:underline cursor-pointer"
+                    className="text-[#B42B2F] dark:text-[#D65356] font-medium hover:underline cursor-pointer"
                   >
                     Create an Account
                   </button>
@@ -414,7 +434,7 @@ export function AuthView() {
                       setMode('signin');
                       setErrorMsg(null);
                     }}
-                    className="text-red-700 dark:text-red-400 font-semibold hover:underline cursor-pointer"
+                    className="text-[#B42B2F] dark:text-[#D65356] font-medium hover:underline cursor-pointer"
                   >
                     Sign In
                   </button>
@@ -423,7 +443,7 @@ export function AuthView() {
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

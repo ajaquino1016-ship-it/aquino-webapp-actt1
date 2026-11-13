@@ -18,128 +18,174 @@
         },
         "displayName": {
           "type": "string",
-          "description": "Full name or studio name of the user.",
+          "description": "Display name of the user.",
           "maxLength": 120
         },
         "role": {
           "type": "string",
-          "description": "Account role such as freelancer, designer, or agency.",
+          "description": "Account role.",
           "maxLength": 64
         },
         "storageUsedBytes": {
           "type": "number",
-          "description": "Aggregated storage size in bytes."
+          "description": "Legacy field kept for backwards compatibility."
         },
         "createdAt": {
           "type": "string",
-          "description": "ISO timestamp of account registration."
+          "description": "ISO timestamp of account registration.",
+          "maxLength": 64
         },
         "updatedAt": {
           "type": "string",
-          "description": "ISO timestamp of last profile update."
+          "description": "ISO timestamp of last profile update.",
+          "maxLength": 64
         }
       },
       "required": ["userId", "email", "displayName"]
     },
-    "VaultFile": {
-      "title": "VaultFile",
-      "description": "File record uploaded by or for a client project.",
+    "FavoriteRecipe": {
+      "title": "FavoriteRecipe",
+      "description": "Saved recipe favorite belonging to a specific user.",
       "type": "object",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique file identifier.",
+          "description": "Unique favorite identifier.",
           "maxLength": 128
         },
         "userId": {
           "type": "string",
-          "description": "Owner UID who uploaded or owns the file portal.",
+          "description": "Owner UID.",
           "maxLength": 128
         },
         "name": {
           "type": "string",
-          "description": "Original file name.",
-          "maxLength": 255
+          "description": "Recipe name.",
+          "maxLength": 180
         },
-        "size": {
+        "description": {
+          "type": "string",
+          "description": "Short one-line recipe summary.",
+          "maxLength": 400
+        },
+        "totalTimeMinutes": {
           "type": "number",
-          "description": "File size in bytes."
+          "description": "Total prep plus cook time in minutes."
         },
-        "type": {
-          "type": "string",
-          "description": "MIME type of the file.",
-          "maxLength": 128
+        "prepTimeMinutes": {
+          "type": "number",
+          "description": "Prep time in minutes."
         },
-        "category": {
+        "cookTimeMinutes": {
+          "type": "number",
+          "description": "Cook time in minutes."
+        },
+        "difficulty": {
           "type": "string",
-          "description": "Category tag e.g. Deliverable, Invoice, Asset, Draft.",
+          "description": "Easy, Medium, or Hard.",
+          "maxLength": 32
+        },
+        "servings": {
+          "type": "number",
+          "description": "Number of servings."
+        },
+        "dietTags": {
+          "type": "array",
+          "description": "Applicable dietary tags."
+        },
+        "ingredientsHave": {
+          "type": "array",
+          "description": "Ingredients the user has."
+        },
+        "ingredientsNeed": {
+          "type": "array",
+          "description": "Extra ingredients needed to buy."
+        },
+        "steps": {
+          "type": "array",
+          "description": "Numbered beginner-friendly steps."
+        },
+        "tips": {
+          "type": "array",
+          "description": "Cooking tips and substitutions."
+        },
+        "nutrition": {
+          "type": "object",
+          "description": "Estimated nutrition per serving."
+        },
+        "savedAt": {
+          "type": "string",
+          "description": "ISO timestamp when saved.",
           "maxLength": 64
-        },
-        "clientName": {
-          "type": "string",
-          "description": "Target client name or company.",
-          "maxLength": 120
-        },
-        "notes": {
-          "type": "string",
-          "description": "Optional notes or instructions for the client.",
-          "maxLength": 1000
-        },
-        "isStarred": {
-          "type": "boolean",
-          "description": "Whether file is pinned or starred."
-        },
-        "downloadCount": {
-          "type": "number",
-          "description": "Times the file was downloaded."
-        },
-        "previewDataUrl": {
-          "type": "string",
-          "description": "Optional small thumbnail data or preview string.",
-          "maxLength": 20480
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when file was uploaded."
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when file was last modified."
         }
       },
-      "required": ["id", "userId", "name", "size", "type", "clientName"]
+      "required": ["id", "userId", "name", "description", "totalTimeMinutes", "difficulty", "servings", "savedAt"]
     },
-    "ClientProject": {
-      "title": "ClientProject",
-      "description": "Client directory grouping files.",
+    "SearchHistoryItem": {
+      "title": "SearchHistoryItem",
+      "description": "Recent recipe search performed by a user.",
       "type": "object",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique project identifier.",
+          "description": "Unique search history identifier.",
           "maxLength": 128
         },
         "userId": {
           "type": "string",
-          "description": "Owner UID of the project.",
+          "description": "Owner UID.",
           "maxLength": 128
         },
-        "clientName": {
-          "type": "string",
-          "description": "Client or company name.",
-          "maxLength": 120
+        "ingredients": {
+          "type": "array",
+          "description": "Ingredient chips used for the search."
         },
-        "projectName": {
-          "type": "string",
-          "description": "Project title or brief.",
-          "maxLength": 120
+        "filters": {
+          "type": "object",
+          "description": "Filters used (maxTimeMinutes, diet, servings)."
+        },
+        "recipes": {
+          "type": "array",
+          "description": "The recipes returned for this search."
         },
         "createdAt": {
           "type": "string",
-          "description": "Timestamp when project was created."
+          "description": "ISO timestamp of search.",
+          "maxLength": 64
         }
       },
-      "required": ["id", "userId", "clientName", "projectName"]
+      "required": ["id", "userId", "ingredients", "filters", "recipes", "createdAt"]
+    },
+    "UserFilterPreferences": {
+      "title": "UserFilterPreferences",
+      "description": "Last-used recipe search filters for a user.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner UID.",
+          "maxLength": 128
+        },
+        "maxTimeMinutes": {
+          "type": "number",
+          "description": "0 for Any, or 15, 30, 60."
+        },
+        "diet": {
+          "type": "string",
+          "description": "Selected diet filter.",
+          "maxLength": 64
+        },
+        "servings": {
+          "type": "number",
+          "description": "Servings count 1 to 6."
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp when updated.",
+          "maxLength": 64
+        }
+      },
+      "required": ["userId", "diet", "servings", "updatedAt"]
     }
   },
   "firestore": {
@@ -147,19 +193,25 @@
       "schema": {
         "$ref": "#/entities/UserProfile"
       },
-      "description": "Private user account profile and storage quota info."
+      "description": "Private user account profile."
     },
-    "/users/{userId}/files/{fileId}": {
+    "/users/{userId}/favorites/{recipeId}": {
       "schema": {
-        "$ref": "#/entities/VaultFile"
+        "$ref": "#/entities/FavoriteRecipe"
       },
-      "description": "Files securely isolated per user client portal."
+      "description": "Saved favorite recipes per user."
     },
-    "/users/{userId}/projects/{projectId}": {
+    "/users/{userId}/history/{historyId}": {
       "schema": {
-        "$ref": "#/entities/ClientProject"
+        "$ref": "#/entities/SearchHistoryItem"
       },
-      "description": "Client projects created by the freelancer/designer."
+      "description": "Recent ingredient searches and results per user."
+    },
+    "/users/{userId}/preferences/{prefId}": {
+      "schema": {
+        "$ref": "#/entities/UserFilterPreferences"
+      },
+      "description": "Last-used filter preferences per user."
     }
   }
 }

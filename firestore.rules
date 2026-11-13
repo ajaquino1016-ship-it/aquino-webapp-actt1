@@ -42,37 +42,57 @@ service cloud.firestore {
              (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
     }
 
-    // Validation for VaultFile
-    function isValidVaultFile(data) {
-      return data.keys().hasAll(['id', 'userId', 'name', 'size', 'type', 'clientName']) &&
-             data.keys().hasOnly(['id', 'userId', 'name', 'size', 'type', 'category', 'clientName', 'notes', 'isStarred', 'downloadCount', 'previewDataUrl', 'createdAt', 'updatedAt']) &&
-             data.id is string && data.id.size() <= 128 &&
+    // Validation for FavoriteRecipe
+    function isValidFavoriteRecipe(data) {
+      return data.keys().hasAll(['id', 'userId', 'name', 'description', 'totalTimeMinutes', 'difficulty', 'servings', 'savedAt']) &&
+             data.keys().hasOnly([
+               'id', 'userId', 'name', 'description', 'totalTimeMinutes',
+               'prepTimeMinutes', 'cookTimeMinutes', 'difficulty', 'servings',
+               'dietTags', 'ingredientsHave', 'ingredientsNeed', 'steps',
+               'tips', 'nutrition', 'savedAt'
+             ]) &&
+             data.id is string && data.id.size() > 0 && data.id.size() <= 128 &&
              data.userId is string && data.userId.size() <= 128 &&
-             data.name is string && data.name.size() > 0 && data.name.size() <= 255 &&
-             data.size is number && data.size >= 0 &&
-             data.type is string && data.type.size() <= 128 &&
-             data.clientName is string && data.clientName.size() <= 120 &&
-             (!('category' in data) || (data.category is string && data.category.size() <= 64)) &&
-             (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000)) &&
-             (!('isStarred' in data) || data.isStarred is bool) &&
-             (!('downloadCount' in data) || (data.downloadCount is number && data.downloadCount >= 0)) &&
-             (!('previewDataUrl' in data) || (data.previewDataUrl is string && data.previewDataUrl.size() <= 20480)) &&
-             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
-             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+             data.name is string && data.name.size() > 0 && data.name.size() <= 180 &&
+             data.description is string && data.description.size() <= 400 &&
+             data.totalTimeMinutes is number && data.totalTimeMinutes >= 0 && data.totalTimeMinutes <= 1440 &&
+             (!('prepTimeMinutes' in data) || (data.prepTimeMinutes is number && data.prepTimeMinutes >= 0 && data.prepTimeMinutes <= 1440)) &&
+             (!('cookTimeMinutes' in data) || (data.cookTimeMinutes is number && data.cookTimeMinutes >= 0 && data.cookTimeMinutes <= 1440)) &&
+             data.difficulty is string && data.difficulty.size() <= 32 &&
+             data.servings is number && data.servings >= 1 && data.servings <= 12 &&
+             (!('dietTags' in data) || (data.dietTags is list && data.dietTags.size() <= 12)) &&
+             (!('ingredientsHave' in data) || (data.ingredientsHave is list && data.ingredientsHave.size() <= 60)) &&
+             (!('ingredientsNeed' in data) || (data.ingredientsNeed is list && data.ingredientsNeed.size() <= 60)) &&
+             (!('steps' in data) || (data.steps is list && data.steps.size() <= 40)) &&
+             (!('tips' in data) || (data.tips is list && data.tips.size() <= 20)) &&
+             (!('nutrition' in data) || data.nutrition is map) &&
+             data.savedAt is string && data.savedAt.size() <= 64;
     }
 
-    // Validation for ClientProject
-    function isValidClientProject(data) {
-      return data.keys().hasAll(['id', 'userId', 'clientName', 'projectName']) &&
-             data.keys().hasOnly(['id', 'userId', 'clientName', 'projectName', 'createdAt']) &&
-             data.id is string && data.id.size() <= 128 &&
+    // Validation for SearchHistoryItem
+    function isValidSearchHistoryItem(data) {
+      return data.keys().hasAll(['id', 'userId', 'ingredients', 'filters', 'recipes', 'createdAt']) &&
+             data.keys().hasOnly(['id', 'userId', 'ingredients', 'filters', 'recipes', 'createdAt']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() <= 128 &&
              data.userId is string && data.userId.size() <= 128 &&
-             data.clientName is string && data.clientName.size() <= 120 &&
-             data.projectName is string && data.projectName.size() <= 120 &&
-             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64));
+             data.ingredients is list && data.ingredients.size() <= 50 &&
+             data.filters is map &&
+             data.recipes is list && data.recipes.size() <= 5 &&
+             data.createdAt is string && data.createdAt.size() <= 64;
     }
 
-    // User Profile matching
+    // Validation for UserFilterPreferences
+    function isValidUserFilterPreferences(data) {
+      return data.keys().hasAll(['userId', 'diet', 'servings', 'updatedAt']) &&
+             data.keys().hasOnly(['userId', 'maxTimeMinutes', 'diet', 'servings', 'updatedAt']) &&
+             data.userId is string && data.userId.size() <= 128 &&
+             (!('maxTimeMinutes' in data) || data.maxTimeMinutes == null || (data.maxTimeMinutes is number && data.maxTimeMinutes >= 0 && data.maxTimeMinutes <= 1440)) &&
+             data.diet is string && data.diet.size() <= 64 &&
+             data.servings is number && data.servings >= 1 && data.servings <= 12 &&
+             data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    // User Profile and private PantryAI subcollections
     match /users/{userId} {
       allow get: if isOwner(userId) && isValidId(userId);
       allow list: if false; // PII protection: disable listing users
@@ -84,32 +104,45 @@ service cloud.firestore {
                        incoming().userId == existing().userId;
       allow delete: if isOwner(userId) && isValidId(userId);
 
-      // Subcollection: Files uploaded by this user
-      match /files/{fileId} {
-        allow list: if isOwner(userId);
-        allow get: if isOwner(userId) && isValidId(fileId);
-        allow create: if isOwner(userId) && isValidId(fileId) &&
-                         isValidVaultFile(incoming()) &&
+      // Subcollection: Saved favorite recipes
+      match /favorites/{recipeId} {
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow get: if isOwner(userId) && isValidId(recipeId);
+        allow create: if isOwner(userId) && isValidId(recipeId) &&
+                         isValidFavoriteRecipe(incoming()) &&
                          incoming().userId == request.auth.uid;
-        allow update: if isOwner(userId) && isValidId(fileId) &&
-                         isValidVaultFile(incoming()) &&
+        allow update: if isOwner(userId) && isValidId(recipeId) &&
+                         isValidFavoriteRecipe(incoming()) &&
                          incoming().userId == existing().userId &&
                          incoming().id == existing().id;
-        allow delete: if isOwner(userId) && isValidId(fileId);
+        allow delete: if isOwner(userId) && isValidId(recipeId);
       }
 
-      // Subcollection: Client Projects
-      match /projects/{projectId} {
-        allow list: if isOwner(userId);
-        allow get: if isOwner(userId) && isValidId(projectId);
-        allow create: if isOwner(userId) && isValidId(projectId) &&
-                         isValidClientProject(incoming()) &&
+      // Subcollection: Recent search history
+      match /history/{historyId} {
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow get: if isOwner(userId) && isValidId(historyId);
+        allow create: if isOwner(userId) && isValidId(historyId) &&
+                         isValidSearchHistoryItem(incoming()) &&
                          incoming().userId == request.auth.uid;
-        allow update: if isOwner(userId) && isValidId(projectId) &&
-                         isValidClientProject(incoming()) &&
+        allow update: if isOwner(userId) && isValidId(historyId) &&
+                         isValidSearchHistoryItem(incoming()) &&
                          incoming().userId == existing().userId &&
                          incoming().id == existing().id;
-        allow delete: if isOwner(userId) && isValidId(projectId);
+        allow delete: if isOwner(userId) && isValidId(historyId);
+      }
+
+      // Subcollection: User filter preferences
+      match /preferences/{prefId} {
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow get: if isOwner(userId) && isValidId(prefId);
+        allow create: if isOwner(userId) && isValidId(prefId) &&
+                         isValidUserFilterPreferences(incoming()) &&
+                         incoming().userId == request.auth.uid;
+        allow update: if isOwner(userId) && isValidId(prefId) &&
+                         isValidUserFilterPreferences(incoming()) &&
+                         incoming().userId == existing().userId;
+        allow delete: if isOwner(userId) && isValidId(prefId);
       }
     }
   }

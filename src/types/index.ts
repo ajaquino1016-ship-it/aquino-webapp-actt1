@@ -1,25 +1,63 @@
-export type FileCategory =
-  | 'Deliverables'
-  | 'Contracts & Invoices'
-  | 'Brand Assets'
-  | 'Drafts & Revisions'
-  | 'Source Files'
-  | 'General';
+export type DietOption =
+  | 'Any'
+  | 'Vegetarian'
+  | 'Vegan'
+  | 'Pescatarian'
+  | 'Gluten-free'
+  | 'Dairy-free'
+  | 'Halal'
+  | 'Low-carb';
 
-export interface VaultFile {
+export type MaxTimeOption = 0 | 15 | 30 | 60;
+
+export interface RecipeFilters {
+  maxTimeMinutes: MaxTimeOption;
+  diet: DietOption;
+  servings: number;
+}
+
+export interface IngredientNeed {
+  name: string;
+  quantity: string;
+}
+
+export interface RecipeNutrition {
+  calories: number;
+  protein: string;
+  carbs: string;
+  fat: string;
+}
+
+export interface Recipe {
+  id?: string;
+  name: string;
+  description: string;
+  totalTimeMinutes: number;
+  prepTimeMinutes: number;
+  cookTimeMinutes: number;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  servings: number;
+  dietTags: string[];
+  ingredientsHave: string[];
+  ingredientsNeed: IngredientNeed[];
+  steps: string[];
+  tips: string[];
+  nutrition: RecipeNutrition;
+}
+
+export interface FavoriteRecipe extends Recipe {
   id: string;
   userId: string;
-  name: string;
-  size: number;
-  type: string;
-  category: FileCategory | string;
-  clientName: string;
-  notes?: string;
-  isStarred?: boolean;
-  downloadCount: number;
-  previewDataUrl?: string;
+  savedAt: string;
+}
+
+export interface SearchHistoryItem {
+  id: string;
+  userId: string;
+  ingredients: string[];
+  filters: RecipeFilters;
+  recipes: Recipe[];
   createdAt: string;
-  updatedAt?: string;
 }
 
 export interface UserProfile {
@@ -33,13 +71,4 @@ export interface UserProfile {
   updatedAt?: string;
 }
 
-export interface ClientProject {
-  id: string;
-  userId: string;
-  clientName: string;
-  projectName: string;
-  createdAt: string;
-}
-
-export type ViewMode = 'list' | 'grid';
-export type SortOption = 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc' | 'size-desc' | 'size-asc';
+export type AppTab = 'home' | 'favorites' | 'history';
