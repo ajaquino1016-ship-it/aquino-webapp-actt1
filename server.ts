@@ -39,6 +39,8 @@ interface RecipeNutrition {
 interface GeneratedRecipe {
   name: string;
   description: string;
+  cuisine: string;
+  mood: string;
   totalTimeMinutes: number;
   prepTimeMinutes: number;
   cookTimeMinutes: number;
@@ -120,8 +122,16 @@ function validateRecipePayload(raw: unknown): RecipeGenerationPayload | null {
       unknown
     >;
 
+    const cuisine =
+      typeof r.cuisine === 'string' && r.cuisine.trim() ? r.cuisine.trim() : 'Global';
+    const mood =
+      typeof r.mood === 'string' && r.mood.trim() ? r.mood.trim() : 'Everyday';
+
     const nutrition: RecipeNutrition = {
-      calories: Number.isFinite(Number(nutObj.calories)) ? Math.round(Number(nutObj.calories)) : 350,
+      calories:
+        Number.isFinite(Number(nutObj.calories)) && Number(nutObj.calories) > 0
+          ? Math.round(Number(nutObj.calories))
+          : 350,
       protein: typeof nutObj.protein === 'string' ? nutObj.protein : `${Math.round(Number(nutObj.protein) || 15)}g`,
       carbs: typeof nutObj.carbs === 'string' ? nutObj.carbs : `${Math.round(Number(nutObj.carbs) || 35)}g`,
       fat: typeof nutObj.fat === 'string' ? nutObj.fat : `${Math.round(Number(nutObj.fat) || 12)}g`,
@@ -130,6 +140,8 @@ function validateRecipePayload(raw: unknown): RecipeGenerationPayload | null {
     normalized.push({
       name: r.name.trim(),
       description: r.description.trim(),
+      cuisine,
+      mood,
       totalTimeMinutes: Math.max(1, Math.round(totalTime)),
       prepTimeMinutes: Number.isFinite(prepTime) ? Math.max(0, Math.round(prepTime)) : Math.round(totalTime * 0.35),
       cookTimeMinutes: Number.isFinite(cookTime) ? Math.max(0, Math.round(cookTime)) : Math.round(totalTime * 0.65),
@@ -145,7 +157,11 @@ function validateRecipePayload(raw: unknown): RecipeGenerationPayload | null {
   }
 
   if (normalized.length === 0) return null;
-  return { recipes: normalized };
+  const note =
+    typeof obj.noMatchReason === 'string' && obj.noMatchReason.trim()
+      ? obj.noMatchReason.trim()
+      : undefined;
+  return note ? { recipes: normalized, noMatchReason: note } : { recipes: normalized };
 }
 
 function safeJsonParse(text: string | undefined): unknown {
@@ -169,10 +185,12 @@ async function startServer() {
   // Recipe Generation Endpoint
   app.post('/api/recipes/generate', async (req, res) => {
     try {
-      const { ingredients, maxTimeMinutes, diet, servings } = req.body as {
+      const { ingredients, maxTimeMinutes, diet, cuisine, mood, servings } = req.body as {
         ingredients?: string[];
         maxTimeMinutes?: number | null;
         diet?: string;
+        cuisine?: string;
+        mood?: string;
         servings?: number;
       };
 
@@ -195,10 +213,23 @@ async function startServer() {
 
       const targetServings = Math.max(1, Math.min(6, Number(servings) || 2));
       const targetDiet = typeof diet === 'string' && diet.trim() ? diet.trim() : 'Any';
+      const targetCuisine = typeof cuisine === 'string' && cuisine.trim() ? cuisine.trim() : 'Any';
+      const targetMood = typeof mood === 'string' && mood.trim() ? mood.trim() : 'Any';
       const targetMaxTime =
         typeof maxTimeMinutes === 'number' && maxTimeMinutes > 0 ? maxTimeMinutes : null;
 
       const ai = getGeminiClient();
+
+      const moodGuidance =
+        targetMood === 'Quick snack'
+          ? 'Keep prep very short with minimal, simple steps suitable for a quick snack.'
+          : targetMood === 'Light and healthy'
+          ? 'Favor lower-calorie preparations, lighter cooking methods, and plenty of vegetables.'
+          : targetMood === 'Impress guests'
+          ? 'Elevate presentation, plating, and culinary technique to feel special for guests.'
+          : targetMood === 'Comfort food'
+          ? 'Make the dishes hearty, warming, and familiar comfort food.'
+          : 'Balance everyday practicality with appetizing flavor.';
 
       const systemInstruction = `You are PantryAI, a practical, beginner-friendly culinary assistant.
 Rules you MUST follow strictly:
@@ -211,20 +242,30 @@ Rules you MUST follow strictly:
           ? `STRICTLY respect the maximum cooking time of ${targetMaxTime} minutes. Every recipe's totalTimeMinutes (prepTimeMinutes + cookTimeMinutes) MUST be <= ${targetMaxTime}.`
           : 'Suggest reasonable everyday cooking times.'
       }
-6. If NO realistic recipe can satisfy the ingredients together with the strict diet and time constraints (for example, impossible dietary clash or impossible time limit for raw tough ingredients), return an empty "recipes" array [] and provide a helpful "noMatchReason" explaining why and suggesting which filter to relax.
-7. Otherwise, return EXACTLY 3 distinct recipes tailored for ${targetServings} serving(s).
-8. In "ingredientsHave", include helpful quantities alongside each ingredient the user already has or pantry staple (e.g., "2 large eggs", "1 cup rice", "1 tbsp cooking oil").
-9. Write "steps" as clear, friendly, numbered-style instructions suitable for beginners (do not include leading "1." numbers in the string, just clean sentences).
-10. Include practical "tips" with clever substitutions (e.g., "No soy sauce? Use salt and a splash of vinegar").
-11. Provide rough nutrition estimates per serving (calories as integer, protein/carbs/fat as strings like "22g").`;
+6. Cuisine preference ("${targetCuisine}"): ${
+        targetCuisine !== 'Any'
+          ? `Match ${targetCuisine} culinary style, flavor profiles, and cooking techniques closely.`
+          : 'Choose fitting everyday cuisines and set each recipe "cuisine" field (e.g., Filipino, Japanese, Korean, Italian, Mexican, American, Mediterranean, etc.).'
+      }
+7. Mood preference ("${targetMood}"): ${moodGuidance} Always populate each recipe "mood" field (e.g., "${
+        targetMood !== 'Any' ? targetMood : 'Comfort food'
+      }" or another concise mood tag like "Light and healthy", "Quick snack", "Impress guests").
+8. If NO realistic recipe can satisfy strict time or diet constraints at all, return an empty "recipes" array [] and explain why in "noMatchReason". However, if the user's ingredients only loosely fit the requested cuisine or mood (for example, ingredients aren't traditional for that cuisine), suggest the 3 closest realistic matches and set "noMatchReason" to a short friendly note explaining that these are the closest matches for those ingredients.
+9. Otherwise, return EXACTLY 3 distinct recipes tailored for ${targetServings} serving(s).
+10. In "ingredientsHave", include helpful quantities alongside each ingredient the user already has or pantry staple (e.g., "2 large eggs", "1 cup rice", "1 tbsp cooking oil").
+11. Write "steps" as clear, friendly, numbered-style instructions suitable for beginners (do not include leading "1." numbers in the string, just clean sentences).
+12. Include practical "tips" with clever substitutions (e.g., "No soy sauce? Use salt and a splash of vinegar").
+13. Provide realistic estimated nutrition per serving for EVERY recipe: "calories" MUST be a positive integer representing kcal per serving, and protein/carbs/fat as strings like "22g".`;
 
       const userPrompt = `Available ingredients: ${cleanIngredients.join(', ')}.
 Filters:
 - Max cooking time: ${targetMaxTime ? `${targetMaxTime} minutes` : 'Any'}
 - Diet requirement: ${targetDiet}
+- Cuisine style: ${targetCuisine}
+- Mood: ${targetMood}
 - Servings: ${targetServings}
 
-Generate 3 realistic recipe ideas (or empty recipes with noMatchReason if filters cannot be satisfied realistically).`;
+Generate 3 realistic recipe ideas (or empty recipes with noMatchReason if strict diet/time filters cannot be satisfied realistically).`;
 
       const responseSchema = {
         type: Type.OBJECT,
@@ -236,6 +277,8 @@ Generate 3 realistic recipe ideas (or empty recipes with noMatchReason if filter
               properties: {
                 name: { type: Type.STRING },
                 description: { type: Type.STRING },
+                cuisine: { type: Type.STRING },
+                mood: { type: Type.STRING },
                 totalTimeMinutes: { type: Type.INTEGER },
                 prepTimeMinutes: { type: Type.INTEGER },
                 cookTimeMinutes: { type: Type.INTEGER },
@@ -270,6 +313,8 @@ Generate 3 realistic recipe ideas (or empty recipes with noMatchReason if filter
               required: [
                 'name',
                 'description',
+                'cuisine',
+                'mood',
                 'totalTimeMinutes',
                 'prepTimeMinutes',
                 'cookTimeMinutes',
@@ -441,6 +486,70 @@ Generate 3 realistic recipe ideas (or empty recipes with noMatchReason if filter
       return res.status(500).json({
         error: 'Failed to process image. Please try again.',
       });
+    }
+  });
+
+  // Shopping List Ingredient Categorization Endpoint
+  app.post('/api/shopping-list/categorize', async (req, res) => {
+    try {
+      const { items } = req.body as { items?: string[] };
+      const cleanItems = Array.isArray(items)
+        ? items
+            .filter((i): i is string => typeof i === 'string')
+            .map((i) => i.trim())
+            .filter((i) => i.length > 0)
+            .slice(0, 60)
+        : [];
+
+      if (cleanItems.length === 0) {
+        return res.json({ categories: {} });
+      }
+
+      const ai = getGeminiClient();
+      const responseSchema = {
+        type: Type.OBJECT,
+        properties: {
+          assignments: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING },
+                category: {
+                  type: Type.STRING,
+                  enum: ['Produce', 'Meat and Seafood', 'Dairy and Eggs', 'Grains and Pantry', 'Other'],
+                },
+              },
+              required: ['name', 'category'],
+            },
+          },
+        },
+        required: ['assignments'],
+      };
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-4-hydrogen',
+        contents: `Categorize each grocery ingredient into exactly one category ("Produce", "Meat and Seafood", "Dairy and Eggs", "Grains and Pantry", or "Other"): ${cleanItems.join(', ')}`,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema,
+        },
+      });
+
+      const parsed = safeJsonParse(response.text) as {
+        assignments?: { name: string; category: string }[];
+      } | null;
+
+      const categories: Record<string, string> = {};
+      for (const entry of parsed?.assignments ?? []) {
+        if (entry?.name && entry?.category) {
+          categories[entry.name.toLowerCase().trim()] = entry.category;
+        }
+      }
+
+      return res.json({ categories });
+    } catch {
+      return res.json({ categories: {} });
     }
   });
 

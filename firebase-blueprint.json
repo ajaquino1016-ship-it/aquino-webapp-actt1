@@ -68,6 +68,16 @@
           "description": "Short one-line recipe summary.",
           "maxLength": 400
         },
+        "cuisine": {
+          "type": "string",
+          "description": "Cuisine style tag.",
+          "maxLength": 64
+        },
+        "mood": {
+          "type": "string",
+          "description": "Recipe mood tag.",
+          "maxLength": 64
+        },
         "totalTimeMinutes": {
           "type": "number",
           "description": "Total prep plus cook time in minutes."
@@ -175,6 +185,16 @@
           "description": "Selected diet filter.",
           "maxLength": 64
         },
+        "cuisine": {
+          "type": "string",
+          "description": "Selected cuisine filter.",
+          "maxLength": 64
+        },
+        "mood": {
+          "type": "string",
+          "description": "Selected mood filter.",
+          "maxLength": 64
+        },
         "servings": {
           "type": "number",
           "description": "Servings count 1 to 6."
@@ -186,6 +206,86 @@
         }
       },
       "required": ["userId", "diet", "servings", "updatedAt"]
+    },
+    "UserStreakData": {
+      "title": "UserStreakData",
+      "description": "Per-user visit streak, cooking streak, freezes, badges, cooked date history, and reminder settings.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner UID.",
+          "maxLength": 128
+        },
+        "visitStreak": {
+          "type": "number",
+          "description": "Current consecutive days visited."
+        },
+        "bestVisitStreak": {
+          "type": "number",
+          "description": "Longest visit streak."
+        },
+        "lastVisitDate": {
+          "type": "string",
+          "description": "Last local date (YYYY-MM-DD) visited.",
+          "maxLength": 16
+        },
+        "cookingStreak": {
+          "type": "number",
+          "description": "Current consecutive days cooked."
+        },
+        "bestCookingStreak": {
+          "type": "number",
+          "description": "Longest cooking streak."
+        },
+        "lastCookedDate": {
+          "type": "string",
+          "description": "Last local date (YYYY-MM-DD) cooked.",
+          "maxLength": 16
+        },
+        "freezes": {
+          "type": "number",
+          "description": "Stored Streak Freezes (0 to 2)."
+        },
+        "cookedDates": {
+          "type": "array",
+          "description": "Local dates cooked (YYYY-MM-DD)."
+        },
+        "freezeDates": {
+          "type": "array",
+          "description": "Local dates preserved by a Streak Freeze."
+        },
+        "unlockedBadges": {
+          "type": "array",
+          "description": "Earned badge identifiers."
+        },
+        "celebratedMilestones": {
+          "type": "array",
+          "description": "Milestones already celebrated."
+        },
+        "monthlyRecipeCounts": {
+          "type": "object",
+          "description": "Recipes cooked per YYYY-MM month."
+        },
+        "pendingFreezeNotice": {
+          "type": "boolean",
+          "description": "Whether to show the freeze-saved notice."
+        },
+        "freshStartNotice": {
+          "type": "boolean",
+          "description": "Whether to show the fresh-start encouragement."
+        },
+        "settings": {
+          "type": "object",
+          "description": "Notification and reminder settings."
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last streak update.",
+          "maxLength": 64
+        }
+      },
+      "required": ["userId", "visitStreak", "bestVisitStreak", "cookingStreak", "bestCookingStreak", "freezes", "cookedDates", "freezeDates", "unlockedBadges", "celebratedMilestones", "updatedAt"]
     }
   },
   "firestore": {
@@ -212,6 +312,12 @@
         "$ref": "#/entities/UserFilterPreferences"
       },
       "description": "Last-used filter preferences per user."
+    },
+    "/users/{userId}/streak/{streakId}": {
+      "schema": {
+        "$ref": "#/entities/UserStreakData"
+      },
+      "description": "Visit and cooking streak state, freezes, badges, and calendar history per user."
     }
   }
 }

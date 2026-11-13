@@ -1,6 +1,21 @@
 import React, { useMemo, useState } from 'react';
-import { Heart, Search, Clock, Utensils, Trash2 } from 'lucide-react';
-import { DietOption, FavoriteRecipe, MaxTimeOption } from '../types';
+import {
+  Heart,
+  Search,
+  Clock,
+  Utensils,
+  Trash2,
+  Globe2,
+  Sparkles,
+  Flame,
+} from 'lucide-react';
+import {
+  CuisineOption,
+  DietOption,
+  FavoriteRecipe,
+  MaxTimeOption,
+  MoodOption,
+} from '../types';
 
 interface FavoritesViewProps {
   favorites: FavoriteRecipe[];
@@ -28,6 +43,23 @@ const DIET_FILTERS: DietOption[] = [
   'Low-carb',
 ];
 
+const CUISINE_FILTERS: CuisineOption[] = [
+  'Any',
+  'Filipino',
+  'Japanese',
+  'Korean',
+  'Italian',
+  'Mexican',
+];
+
+const MOOD_FILTERS: MoodOption[] = [
+  'Any',
+  'Comfort food',
+  'Light and healthy',
+  'Quick snack',
+  'Impress guests',
+];
+
 export function FavoritesView({
   favorites,
   isLoading,
@@ -38,6 +70,8 @@ export function FavoritesView({
   const [searchQuery, setSearchQuery] = useState('');
   const [maxTime, setMaxTime] = useState<MaxTimeOption>(0);
   const [dietTag, setDietTag] = useState<DietOption>('Any');
+  const [cuisineFilter, setCuisineFilter] = useState<CuisineOption>('Any');
+  const [moodFilter, setMoodFilter] = useState<MoodOption>('Any');
 
   const filteredFavorites = useMemo(() => {
     return favorites.filter((fav) => {
@@ -54,21 +88,33 @@ export function FavoritesView({
           return false;
         }
       }
+      if (cuisineFilter !== 'Any') {
+        const c = (fav.cuisine || '').toLowerCase();
+        if (!c.includes(cuisineFilter.toLowerCase())) {
+          return false;
+        }
+      }
+      if (moodFilter !== 'Any') {
+        const m = (fav.mood || '').toLowerCase();
+        if (!m.includes(moodFilter.toLowerCase())) {
+          return false;
+        }
+      }
       return true;
     });
-  }, [favorites, searchQuery, maxTime, dietTag]);
+  }, [favorites, searchQuery, maxTime, dietTag, cuisineFilter, moodFilter]);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <div className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-[0.14em] text-[#B42B2F] dark:text-[#D9B9AA]">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--accent-on-card)]">
             Saved Collection
           </p>
-          <h1 className="font-serif text-2xl sm:text-3xl font-semibold tracking-tight text-[#3D4547] dark:text-[#EDEEE9]">
+          <h1 className="font-serif text-2xl sm:text-3xl font-semibold tracking-tight text-[var(--text)]">
             Saved favorites
           </h1>
-          <p className="text-sm text-[#535C5E] dark:text-[#B8B9AF]">
+          <p className="text-sm text-[var(--text-secondary)]">
             {favorites.length} saved {favorites.length === 1 ? 'recipe' : 'recipes'} in your account
           </p>
         </div>
@@ -76,31 +122,31 @@ export function FavoritesView({
 
       {/* Filter & Search Bar */}
       {favorites.length > 0 && (
-        <div className="bg-[#ECD0C2] dark:bg-[#292F2D] rounded-xl border border-[#3D4547]/15 dark:border-[#424844] p-4 grid grid-cols-1 md:grid-cols-3 gap-3 transition-colors duration-200">
+        <div className="bg-[var(--card)] rounded-xl border border-[var(--card-border)] shadow-[var(--card-shadow)] p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 transition-colors duration-200">
           {/* Search by name */}
-          <div className="relative">
-            <Search className="w-4 h-4 text-[#535C5E] dark:text-[#B8B9AF] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <div className="relative sm:col-span-2 lg:col-span-1">
+            <Search className="w-4 h-4 text-[var(--text-secondary)] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search saved recipes..."
-              className="w-full min-h-[44px] pl-10 pr-3 py-2 bg-[#EDEEE9] dark:bg-[#191E1F] border border-[#3D4547]/20 dark:border-[#424844] rounded-lg text-sm text-[#3D4547] dark:text-[#EDEEE9] placeholder-[#535C5E]/65 dark:placeholder-[#B8B9AF]/55 focus:outline-none focus:border-[#9C9F52] dark:focus:border-[#B5B86F] transition-colors"
+              placeholder="Search recipes..."
+              className="w-full min-h-[44px] pl-10 pr-3 py-2 bg-[var(--surface-nested)] border border-[var(--subtle)] rounded-lg text-sm text-[var(--text)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 transition-colors"
             />
           </div>
 
           {/* Max time filter */}
           <div className="relative flex items-center">
-            <Clock className="w-4 h-4 text-[#6E7234] dark:text-[#B5B86F] absolute left-3.5 pointer-events-none" />
+            <Clock className="w-4 h-4 text-[var(--primary-text)] absolute left-3.5 pointer-events-none" />
             <select
               value={maxTime}
               onChange={(e) => setMaxTime(Number(e.target.value) as MaxTimeOption)}
               aria-label="Filter favorites by cooking time"
-              className="w-full min-h-[44px] pl-10 pr-3 py-2 bg-[#EDEEE9] dark:bg-[#191E1F] border border-[#3D4547]/20 dark:border-[#424844] rounded-lg text-sm text-[#3D4547] dark:text-[#EDEEE9] focus:outline-none focus:border-[#9C9F52] dark:focus:border-[#B5B86F] cursor-pointer"
+              className="w-full min-h-[44px] pl-10 pr-3 py-2 bg-[var(--surface-nested)] border border-[var(--subtle)] rounded-lg text-sm text-[var(--text)] focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 cursor-pointer"
             >
               {TIME_FILTERS.map((t) => (
                 <option key={t.label} value={t.value}>
-                  {t.value === 0 ? 'Any cooking time' : `Under ${t.label}`}
+                  {t.value === 0 ? 'Any time' : `Under ${t.label}`}
                 </option>
               ))}
             </select>
@@ -108,16 +154,50 @@ export function FavoritesView({
 
           {/* Diet tag filter */}
           <div className="relative flex items-center">
-            <Utensils className="w-4 h-4 text-[#6E7234] dark:text-[#B5B86F] absolute left-3.5 pointer-events-none" />
+            <Utensils className="w-4 h-4 text-[var(--primary-text)] absolute left-3.5 pointer-events-none" />
             <select
               value={dietTag}
               onChange={(e) => setDietTag(e.target.value as DietOption)}
               aria-label="Filter favorites by diet tag"
-              className="w-full min-h-[44px] pl-10 pr-3 py-2 bg-[#EDEEE9] dark:bg-[#191E1F] border border-[#3D4547]/20 dark:border-[#424844] rounded-lg text-sm text-[#3D4547] dark:text-[#EDEEE9] focus:outline-none focus:border-[#9C9F52] dark:focus:border-[#B5B86F] cursor-pointer"
+              className="w-full min-h-[44px] pl-10 pr-3 py-2 bg-[var(--surface-nested)] border border-[var(--subtle)] rounded-lg text-sm text-[var(--text)] focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 cursor-pointer"
             >
               {DIET_FILTERS.map((d) => (
                 <option key={d} value={d}>
                   {d === 'Any' ? 'All diets' : d}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Cuisine filter */}
+          <div className="relative flex items-center">
+            <Globe2 className="w-4 h-4 text-[var(--primary-text)] absolute left-3.5 pointer-events-none" />
+            <select
+              value={cuisineFilter}
+              onChange={(e) => setCuisineFilter(e.target.value as CuisineOption)}
+              aria-label="Filter favorites by cuisine"
+              className="w-full min-h-[44px] pl-10 pr-3 py-2 bg-[var(--surface-nested)] border border-[var(--subtle)] rounded-lg text-sm text-[var(--text)] focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 cursor-pointer"
+            >
+              {CUISINE_FILTERS.map((c) => (
+                <option key={c} value={c}>
+                  {c === 'Any' ? 'All cuisines' : c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Mood filter */}
+          <div className="relative flex items-center">
+            <Sparkles className="w-4 h-4 text-[var(--primary-text)] absolute left-3.5 pointer-events-none" />
+            <select
+              value={moodFilter}
+              onChange={(e) => setMoodFilter(e.target.value as MoodOption)}
+              aria-label="Filter favorites by mood"
+              className="w-full min-h-[44px] pl-10 pr-3 py-2 bg-[var(--surface-nested)] border border-[var(--subtle)] rounded-lg text-sm text-[var(--text)] focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 cursor-pointer"
+            >
+              {MOOD_FILTERS.map((m) => (
+                <option key={m} value={m}>
+                  {m === 'Any' ? 'All moods' : m}
                 </option>
               ))}
             </select>
@@ -131,30 +211,34 @@ export function FavoritesView({
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="bg-[#ECD0C2] dark:bg-[#292F2D] rounded-xl border border-[#3D4547]/15 dark:border-[#424844] p-5 h-44 animate-pulse"
-            />
+              className="bg-[var(--card)] rounded-xl border border-[var(--card-border)] p-5 h-44 animate-pulse"
+            >
+              <div className="h-5 w-2/3 rounded bg-[var(--subtle)]/60 mb-3" />
+              <div className="h-3.5 w-full rounded bg-[var(--subtle)]/45 mb-2" />
+              <div className="h-3.5 w-4/5 rounded bg-[var(--subtle)]/45" />
+            </div>
           ))}
         </div>
       )}
 
       {/* Empty State */}
       {!isLoading && favorites.length === 0 && (
-        <div className="bg-[#ECD0C2] dark:bg-[#292F2D] rounded-xl border border-[#3D4547]/15 dark:border-[#424844] p-10 text-center space-y-4 transition-colors duration-200">
-          <div className="w-12 h-12 rounded-lg bg-[#EDEEE9] dark:bg-[#343A36] border border-[#B42B2F]/20 dark:border-[#D65356]/30 text-[#B42B2F] dark:text-[#D65356] mx-auto flex items-center justify-center">
+        <div className="bg-[var(--card)] rounded-xl border border-[var(--card-border)] shadow-[var(--card-shadow)] p-10 text-center space-y-4 transition-colors duration-200">
+          <div className="w-12 h-12 rounded-lg bg-[var(--surface-nested)] border border-[var(--accent)]/40 text-[var(--accent-on-card)] mx-auto flex items-center justify-center">
             <Heart className="w-6 h-6" />
           </div>
           <div className="space-y-1.5 max-w-sm mx-auto">
-            <h2 className="font-serif text-xl font-semibold text-[#3D4547] dark:text-[#EDEEE9]">
+            <h2 className="font-serif text-xl font-semibold text-[var(--text)]">
               No saved recipes yet
             </h2>
-            <p className="text-sm text-[#535C5E] dark:text-[#B8B9AF]">
+            <p className="text-sm text-[var(--text-secondary)]">
               Tap the heart icon on any recipe you like to save it here for quick cooking later.
             </p>
           </div>
           <button
             type="button"
             onClick={onGoHome}
-            className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[#3D4547] hover:bg-[#2F3638] text-[#EDEEE9] dark:bg-[#B5B86F] dark:hover:bg-[#C3C67E] dark:text-[#191E1F] text-sm font-medium transition-colors duration-200 cursor-pointer"
+            className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--primary-btn)] hover:bg-[var(--primary-btn-hover)] text-[var(--primary-btn-text)] text-sm font-medium transition-colors duration-200 cursor-pointer"
           >
             Find recipes
           </button>
@@ -163,8 +247,8 @@ export function FavoritesView({
 
       {/* Filtered Empty State */}
       {!isLoading && favorites.length > 0 && filteredFavorites.length === 0 && (
-        <div className="bg-[#ECD0C2] dark:bg-[#292F2D] rounded-xl border border-[#3D4547]/15 dark:border-[#424844] p-8 text-center space-y-3 transition-colors duration-200">
-          <p className="text-sm text-[#535C5E] dark:text-[#B8B9AF]">
+        <div className="bg-[var(--card)] rounded-xl border border-[var(--card-border)] shadow-[var(--card-shadow)] p-8 text-center space-y-3 transition-colors duration-200">
+          <p className="text-sm text-[var(--text-secondary)]">
             No saved recipes match your current search or filters.
           </p>
           <button
@@ -173,8 +257,10 @@ export function FavoritesView({
               setSearchQuery('');
               setMaxTime(0);
               setDietTag('Any');
+              setCuisineFilter('Any');
+              setMoodFilter('Any');
             }}
-            className="min-h-[40px] px-4 py-2 rounded-lg bg-[#9C9F52] hover:bg-[#8B8E47] text-[#191E1F] dark:bg-transparent dark:border dark:border-[#B5B86F] dark:text-[#EDEEE9] dark:hover:bg-[#B5B86F]/10 text-xs font-medium transition-colors cursor-pointer"
+            className="min-h-[40px] px-4 py-2 rounded-lg bg-[var(--soft-highlight)] text-[var(--soft-highlight-text)] hover:opacity-90 text-xs font-medium transition-colors cursor-pointer"
           >
             Reset filters
           </button>
@@ -184,55 +270,85 @@ export function FavoritesView({
       {/* Favorites Grid */}
       {!isLoading && filteredFavorites.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
-          {filteredFavorites.map((fav) => (
-            <article
-              key={fav.id}
-              className="bg-[#ECD0C2] dark:bg-[#292F2D] rounded-xl border border-[#3D4547]/15 dark:border-[#424844] p-5 flex flex-col justify-between gap-4 transition-colors duration-200"
-            >
-              <div className="space-y-2.5">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-serif text-lg font-semibold text-[#3D4547] dark:text-[#EDEEE9] leading-snug">
-                    {fav.name}
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => onRemoveFavorite(fav.id)}
-                    aria-label={`Remove ${fav.name} from favorites`}
-                    title="Remove from favorites"
-                    className="min-h-[44px] min-w-[44px] -mt-2 -mr-2 flex items-center justify-center rounded-lg text-[#535C5E] dark:text-[#B8B9AF] hover:text-[#B42B2F] dark:hover:text-[#D65356] hover:bg-[#EDEEE9]/60 dark:hover:bg-[#343A36] transition-colors cursor-pointer shrink-0"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+          {filteredFavorites.map((fav) => {
+            const kcal = fav.nutrition?.calories || 350;
 
-                <p className="text-sm text-[#535C5E] dark:text-[#B8B9AF] line-clamp-2 leading-relaxed">
-                  {fav.description}
-                </p>
-
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-[#535C5E] dark:text-[#B8B9AF] tabular-nums">
-                  <span>{fav.totalTimeMinutes} min</span>
-                  <span aria-hidden="true">·</span>
-                  <span>{fav.difficulty}</span>
-                  <span aria-hidden="true">·</span>
-                  <span>{fav.servings} servings</span>
-                </div>
-
-                {fav.dietTags && fav.dietTags.length > 0 && (
-                  <p className="text-xs font-medium text-[#6E7234] dark:text-[#B5B86F]">
-                    {fav.dietTags.join(' · ')}
-                  </p>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => onViewRecipe(fav)}
-                className="w-full min-h-[44px] px-4 py-2 rounded-lg bg-[#3D4547] hover:bg-[#2F3638] text-[#EDEEE9] dark:bg-[#B5B86F] dark:hover:bg-[#C3C67E] dark:text-[#191E1F] text-sm font-medium transition-colors duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9C9F52]"
+            return (
+              <article
+                key={fav.id}
+                className="bg-[var(--card)] rounded-xl border border-[var(--card-border)] shadow-[var(--card-shadow)] p-5 flex flex-col justify-between gap-4 transition-colors duration-200"
               >
-                View recipe
-              </button>
-            </article>
-          ))}
+                <div className="space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <span className="w-7 h-7 rounded-md bg-[var(--surface-nested)] border border-[var(--card-border)] text-[var(--primary-text)] flex items-center justify-center shrink-0 mt-0.5">
+                        <Utensils className="w-3.5 h-3.5" />
+                      </span>
+                      <h3 className="font-serif text-lg font-semibold text-[var(--text)] leading-snug">
+                        {fav.name}
+                      </h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onRemoveFavorite(fav.id)}
+                      aria-label={`Remove ${fav.name} from favorites`}
+                      title="Remove from favorites"
+                      className="min-h-[44px] min-w-[44px] -mt-2 -mr-2 flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--warning-on-card)] hover:bg-[var(--surface-nested)] transition-colors cursor-pointer shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {(fav.cuisine || fav.mood) && (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {fav.cuisine && (
+                        <span className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-[var(--chip-bg)] border border-[var(--subtle)] text-[var(--chip-text)]">
+                          {fav.cuisine}
+                        </span>
+                      )}
+                      {fav.mood && (
+                        <span className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-[var(--soft-highlight)] text-[var(--soft-highlight-text)]">
+                          {fav.mood}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  <p className="text-sm text-[var(--text-secondary)] line-clamp-2 leading-relaxed">
+                    {fav.description}
+                  </p>
+
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-[var(--text-secondary)] tabular-nums">
+                      <span>{fav.totalTimeMinutes} min</span>
+                      <span aria-hidden="true">·</span>
+                      <span>{fav.difficulty}</span>
+                      <span aria-hidden="true">·</span>
+                      <span>{fav.servings} servings</span>
+                    </div>
+                    <p className="text-xs font-medium text-[var(--accent-on-card)] flex items-center gap-1 tabular-nums">
+                      <Flame className="w-3.5 h-3.5 shrink-0" />
+                      <span>~{kcal} kcal per serving (est.)</span>
+                    </p>
+                  </div>
+
+                  {fav.dietTags && fav.dietTags.length > 0 && (
+                    <p className="text-xs font-medium text-[var(--primary-text)]">
+                      {fav.dietTags.join(' · ')}
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => onViewRecipe(fav)}
+                  className="w-full min-h-[44px] px-4 py-2 rounded-lg bg-[var(--primary-btn)] hover:bg-[var(--primary-btn-hover)] text-[var(--primary-btn-text)] text-sm font-medium transition-colors duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+                >
+                  View recipe
+                </button>
+              </article>
+            );
+          })}
         </div>
       )}
     </div>

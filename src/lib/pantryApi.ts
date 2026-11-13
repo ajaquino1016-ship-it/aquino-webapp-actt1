@@ -1,4 +1,4 @@
-import { Recipe, RecipeFilters } from '../types';
+import { Recipe, RecipeFilters, ShoppingCategory } from '../types';
 
 export interface RecipeGenerationResult {
   recipes: Recipe[];
@@ -27,6 +27,8 @@ export async function generateRecipes(
         ingredients,
         maxTimeMinutes: filters.maxTimeMinutes > 0 ? filters.maxTimeMinutes : null,
         diet: filters.diet,
+        cuisine: filters.cuisine,
+        mood: filters.mood,
         servings: filters.servings,
       }),
     });
@@ -128,4 +130,27 @@ export async function detectIngredientsFromPhoto(file: File): Promise<Ingredient
   }
 
   return parsed;
+}
+
+export async function categorizeShoppingItemsWithAI(
+  items: string[]
+): Promise<Record<string, ShoppingCategory>> {
+  if (!navigator.onLine || items.length === 0) {
+    return {};
+  }
+
+  try {
+    const response = await fetch('/api/shopping-list/categorize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items }),
+    });
+    if (!response.ok) return {};
+    const data = (await response.json()) as {
+      categories?: Record<string, ShoppingCategory>;
+    };
+    return data.categories || {};
+  } catch {
+    return {};
+  }
 }

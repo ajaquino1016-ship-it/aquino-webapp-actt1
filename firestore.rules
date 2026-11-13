@@ -46,7 +46,7 @@ service cloud.firestore {
     function isValidFavoriteRecipe(data) {
       return data.keys().hasAll(['id', 'userId', 'name', 'description', 'totalTimeMinutes', 'difficulty', 'servings', 'savedAt']) &&
              data.keys().hasOnly([
-               'id', 'userId', 'name', 'description', 'totalTimeMinutes',
+               'id', 'userId', 'name', 'description', 'cuisine', 'mood', 'totalTimeMinutes',
                'prepTimeMinutes', 'cookTimeMinutes', 'difficulty', 'servings',
                'dietTags', 'ingredientsHave', 'ingredientsNeed', 'steps',
                'tips', 'nutrition', 'savedAt'
@@ -55,6 +55,8 @@ service cloud.firestore {
              data.userId is string && data.userId.size() <= 128 &&
              data.name is string && data.name.size() > 0 && data.name.size() <= 180 &&
              data.description is string && data.description.size() <= 400 &&
+             (!('cuisine' in data) || (data.cuisine is string && data.cuisine.size() <= 64)) &&
+             (!('mood' in data) || (data.mood is string && data.mood.size() <= 64)) &&
              data.totalTimeMinutes is number && data.totalTimeMinutes >= 0 && data.totalTimeMinutes <= 1440 &&
              (!('prepTimeMinutes' in data) || (data.prepTimeMinutes is number && data.prepTimeMinutes >= 0 && data.prepTimeMinutes <= 1440)) &&
              (!('cookTimeMinutes' in data) || (data.cookTimeMinutes is number && data.cookTimeMinutes >= 0 && data.cookTimeMinutes <= 1440)) &&
@@ -84,11 +86,46 @@ service cloud.firestore {
     // Validation for UserFilterPreferences
     function isValidUserFilterPreferences(data) {
       return data.keys().hasAll(['userId', 'diet', 'servings', 'updatedAt']) &&
-             data.keys().hasOnly(['userId', 'maxTimeMinutes', 'diet', 'servings', 'updatedAt']) &&
+             data.keys().hasOnly(['userId', 'maxTimeMinutes', 'diet', 'cuisine', 'mood', 'servings', 'updatedAt']) &&
              data.userId is string && data.userId.size() <= 128 &&
              (!('maxTimeMinutes' in data) || data.maxTimeMinutes == null || (data.maxTimeMinutes is number && data.maxTimeMinutes >= 0 && data.maxTimeMinutes <= 1440)) &&
              data.diet is string && data.diet.size() <= 64 &&
+             (!('cuisine' in data) || (data.cuisine is string && data.cuisine.size() <= 64)) &&
+             (!('mood' in data) || (data.mood is string && data.mood.size() <= 64)) &&
              data.servings is number && data.servings >= 1 && data.servings <= 12 &&
+             data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    // Validation for UserStreakData
+    function isValidUserStreakData(data) {
+      return data.keys().hasAll([
+               'userId', 'visitStreak', 'bestVisitStreak', 'cookingStreak',
+               'bestCookingStreak', 'freezes', 'cookedDates', 'freezeDates',
+               'unlockedBadges', 'celebratedMilestones', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'userId', 'visitStreak', 'bestVisitStreak', 'lastVisitDate',
+               'cookingStreak', 'bestCookingStreak', 'lastCookedDate',
+               'freezes', 'cookedDates', 'freezeDates', 'unlockedBadges',
+               'celebratedMilestones', 'monthlyRecipeCounts',
+               'pendingFreezeNotice', 'freshStartNotice', 'settings', 'updatedAt'
+             ]) &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.visitStreak is number && data.visitStreak >= 0 && data.visitStreak <= 10000 &&
+             data.bestVisitStreak is number && data.bestVisitStreak >= 0 && data.bestVisitStreak <= 10000 &&
+             (!('lastVisitDate' in data) || data.lastVisitDate == null || (data.lastVisitDate is string && data.lastVisitDate.size() <= 16)) &&
+             data.cookingStreak is number && data.cookingStreak >= 0 && data.cookingStreak <= 10000 &&
+             data.bestCookingStreak is number && data.bestCookingStreak >= 0 && data.bestCookingStreak <= 10000 &&
+             (!('lastCookedDate' in data) || data.lastCookedDate == null || (data.lastCookedDate is string && data.lastCookedDate.size() <= 16)) &&
+             data.freezes is number && data.freezes >= 0 && data.freezes <= 2 &&
+             data.cookedDates is list && data.cookedDates.size() <= 2000 &&
+             data.freezeDates is list && data.freezeDates.size() <= 500 &&
+             data.unlockedBadges is list && data.unlockedBadges.size() <= 20 &&
+             data.celebratedMilestones is list && data.celebratedMilestones.size() <= 20 &&
+             (!('monthlyRecipeCounts' in data) || data.monthlyRecipeCounts is map) &&
+             (!('pendingFreezeNotice' in data) || data.pendingFreezeNotice is bool) &&
+             (!('freshStartNotice' in data) || data.freshStartNotice is bool) &&
+             (!('settings' in data) || data.settings is map) &&
              data.updatedAt is string && data.updatedAt.size() <= 64;
     }
 
@@ -143,6 +180,19 @@ service cloud.firestore {
                          isValidUserFilterPreferences(incoming()) &&
                          incoming().userId == existing().userId;
         allow delete: if isOwner(userId) && isValidId(prefId);
+      }
+
+      // Subcollection: App streak data
+      match /streak/{streakId} {
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow get: if isOwner(userId) && isValidId(streakId);
+        allow create: if isOwner(userId) && isValidId(streakId) &&
+                         isValidUserStreakData(incoming()) &&
+                         incoming().userId == request.auth.uid;
+        allow update: if isOwner(userId) && isValidId(streakId) &&
+                         isValidUserStreakData(incoming()) &&
+                         incoming().userId == existing().userId;
+        allow delete: if isOwner(userId) && isValidId(streakId);
       }
     }
   }
