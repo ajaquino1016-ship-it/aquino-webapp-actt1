@@ -1,6 +1,5 @@
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
-  Camera,
   Plus,
   Search,
   X,
@@ -10,8 +9,6 @@ import {
   Users,
   Pencil,
   Check,
-  AlertCircle,
-  Loader2,
   Globe2,
   Sparkles,
 } from 'lucide-react';
@@ -23,7 +20,6 @@ import {
   RecipeFilters,
   UserStreakData,
 } from '../types';
-import { detectIngredientsFromPhoto } from '../lib/pantryApi';
 import { StreakCard } from './StreakCard';
 
 interface HomeViewProps {
@@ -42,6 +38,114 @@ interface HomeViewProps {
 }
 
 const EXAMPLE_INGREDIENTS = ['chicken', 'tomato', 'onion'];
+
+const COMMON_INGREDIENT_CHIPS = [
+  'eggs',
+  'rice',
+  'onion',
+  'garlic',
+  'tomato',
+  'chicken',
+  'pasta',
+  'potato',
+];
+
+const INGREDIENT_SUGGESTIONS = [
+  'eggs',
+  'rice',
+  'onion',
+  'garlic',
+  'tomato',
+  'chicken',
+  'pasta',
+  'potato',
+  'avocado',
+  'bacon',
+  'banana',
+  'basil',
+  'beef',
+  'bell pepper',
+  'black beans',
+  'bok choy',
+  'bread',
+  'broccoli',
+  'brown sugar',
+  'butter',
+  'cabbage',
+  'carrot',
+  'cauliflower',
+  'celery',
+  'cheddar cheese',
+  'cheese',
+  'chicken breast',
+  'chicken thighs',
+  'chickpeas',
+  'chili',
+  'cilantro',
+  'coconut milk',
+  'corn',
+  'cream cheese',
+  'cucumber',
+  'eggplant',
+  'fish',
+  'fish sauce',
+  'flour',
+  'ginger',
+  'green beans',
+  'green onion',
+  'ground beef',
+  'ground pork',
+  'ham',
+  'heavy cream',
+  'honey',
+  'jalapeno',
+  'kale',
+  'kimchi',
+  'lemon',
+  'lentils',
+  'lettuce',
+  'lime',
+  'mayonnaise',
+  'milk',
+  'miso paste',
+  'mozzarella',
+  'mushrooms',
+  'noodles',
+  'oats',
+  'olive oil',
+  'oyster sauce',
+  'parmesan',
+  'parsley',
+  'peanut butter',
+  'peas',
+  'pork',
+  'pork belly',
+  'quinoa',
+  'ramen noodles',
+  'red onion',
+  'salmon',
+  'sausage',
+  'scallions',
+  'sesame oil',
+  'shallot',
+  'shrimp',
+  'sour cream',
+  'soy sauce',
+  'spaghetti',
+  'spinach',
+  'sweet potato',
+  'tofu',
+  'tomato paste',
+  'tomato sauce',
+  'tortilla',
+  'tuna',
+  'turkey',
+  'udon noodles',
+  'vinegar',
+  'yogurt',
+  'zucchini',
+];
+
 const TIME_OPTIONS: { label: string; value: MaxTimeOption }[] = [
   { label: 'Any', value: 0 },
   { label: '15 min', value: 15 },
@@ -89,15 +193,49 @@ export function HomeView({
   onDismissExtendedBanner,
 }: HomeViewProps) {
   const [inputValue, setInputValue] = useState('');
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
+  const [duplicateHint, setDuplicateHint] = useState<string | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingText, setEditingText] = useState('');
 
   const ingredientInputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isScanningPhoto, setIsScanningPhoto] = useState(false);
-  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
-  const [photoMessage, setPhotoMessage] = useState<string | null>(null);
-  const [photoError, setPhotoError] = useState<string | null>(null);
+  const duplicateTimerRef = useRef<number | null>(null);
+
+  const existingSet = useMemo(
+    () => new Set(ingredients.map((i) => i.trim().toLowerCase())),
+    [ingredients]
+  );
+
+  const autocompleteMatches = useMemo(() => {
+    const q = inputValue.trim().toLowerCase();
+    if (!q) return [];
+    const prefixMatches: string[] = [];
+    const substringMatches: string[] = [];
+
+    for (const item of INGREDIENT_SUGGESTIONS) {
+      if (existingSet.has(item)) continue;
+      if (item.startsWith(q)) {
+        prefixMatches.push(item);
+      } else if (item.includes(q)) {
+        substringMatches.push(item);
+      }
+    }
+
+    return [...prefixMatches, ...substringMatches].slice(0, 6);
+  }, [inputValue, existingSet]);
+
+  const showAutocomplete = isInputFocused && autocompleteMatches.length > 0;
+
+  const showDuplicateFeedback = (label: string) => {
+    if (duplicateTimerRef.current) {
+      window.clearTimeout(duplicateTimerRef.current);
+    }
+    setDuplicateHint(`"${label}" is already in your ingredient list.`);
+    duplicateTimerRef.current = window.setTimeout(() => {
+      setDuplicateHint(null);
+    }, 2400);
+  };
 
   const focusIngredientInput = () => {
     ingredientInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -112,23 +250,73 @@ export function HomeView({
 
     if (parts.length === 0) return;
 
-    const existingSet = new Set(ingredients.map((i) => i.toLowerCase()));
+    const currentSet = new Set(ingredients.map((i) => i.trim().toLowerCase()));
     const next = [...ingredients];
+    const skippedDuplicates: string[] = [];
+
     for (const part of parts) {
-      if (!existingSet.has(part)) {
-        existingSet.add(part);
+      if (!currentSet.has(part)) {
+        currentSet.add(part);
         next.push(part);
+      } else {
+        skippedDuplicates.push(part);
       }
     }
-    onUpdateIngredients(next);
+
+    if (next.length !== ingredients.length) {
+      onUpdateIngredients(next);
+      setDuplicateHint(null);
+    } else if (skippedDuplicates.length > 0) {
+      showDuplicateFeedback(skippedDuplicates[0]);
+    }
+  };
+
+  const handleSelectAutocomplete = (suggestion: string) => {
+    addIngredientsFromText(suggestion);
+    setInputValue('');
+    setHighlightedIndex(-1);
+    ingredientInputRef.current?.focus();
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (showAutocomplete && e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        prev < autocompleteMatches.length - 1 ? prev + 1 : 0
+      );
+      return;
+    }
+
+    if (showAutocomplete && e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        prev > 0 ? prev - 1 : autocompleteMatches.length - 1
+      );
+      return;
+    }
+
+    if (e.key === 'Escape' && showAutocomplete) {
+      e.preventDefault();
+      setHighlightedIndex(-1);
+      setIsInputFocused(false);
+      return;
+    }
+
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
+      if (
+        e.key === 'Enter' &&
+        showAutocomplete &&
+        highlightedIndex >= 0 &&
+        autocompleteMatches[highlightedIndex]
+      ) {
+        handleSelectAutocomplete(autocompleteMatches[highlightedIndex]);
+        return;
+      }
       if (inputValue.trim()) {
         addIngredientsFromText(inputValue);
         setInputValue('');
+        setHighlightedIndex(-1);
       }
     } else if (e.key === 'Backspace' && !inputValue && ingredients.length > 0) {
       onUpdateIngredients(ingredients.slice(0, -1));
@@ -137,6 +325,8 @@ export function HomeView({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
+    setDuplicateHint(null);
+    setHighlightedIndex(-1);
     if (val.includes(',')) {
       const segments = val.split(',');
       const last = segments.pop() ?? '';
@@ -154,6 +344,8 @@ export function HomeView({
     if (inputValue.trim()) {
       addIngredientsFromText(inputValue);
       setInputValue('');
+      setHighlightedIndex(-1);
+      ingredientInputRef.current?.focus();
     }
   };
 
@@ -177,61 +369,13 @@ export function HomeView({
     } else {
       const next = [...ingredients];
       next[index] = cleaned;
-      onUpdateIngredients(Array.from(new Set(next)));
+      onUpdateIngredients(Array.from(new Set(next.map((item) => item.trim().toLowerCase()))));
     }
     setEditingIndex(null);
     setEditingText('');
   };
 
-  const handlePhotoSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-
-    setPhotoError(null);
-    setPhotoMessage(null);
-    setIsScanningPhoto(true);
-
-    const previewUrl = URL.createObjectURL(file);
-    setPhotoPreviewUrl(previewUrl);
-
-    try {
-      const result = await detectIngredientsFromPhoto(file);
-      if (result.ingredients.length === 0) {
-        setPhotoError(
-          result.errorHint ||
-            'No recognizable food ingredients were spotted in that photo. Try a clearer, well-lit angle or type your ingredients below.'
-        );
-      } else {
-        const existingSet = new Set(ingredients.map((i) => i.toLowerCase()));
-        const next = [...ingredients];
-        let addedCount = 0;
-        for (const item of result.ingredients) {
-          if (!existingSet.has(item.toLowerCase())) {
-            existingSet.add(item.toLowerCase());
-            next.push(item);
-            addedCount++;
-          }
-        }
-        onUpdateIngredients(next);
-        setPhotoMessage(
-          addedCount > 0
-            ? `Added ${addedCount} ingredient${addedCount === 1 ? '' : 's'} from your photo. Tap any tag to edit or remove.`
-            : 'All detected ingredients were already in your list.'
-        );
-      }
-    } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : 'Could not scan that photo. Please try again.';
-      setPhotoError(message);
-    } finally {
-      setIsScanningPhoto(false);
-    }
-  };
-
-  const canSearch = ingredients.length >= 2 && !isScanningPhoto;
+  const canSearch = ingredients.length >= 2;
 
   return (
     <div className="space-y-8">
@@ -255,116 +399,150 @@ export function HomeView({
           Turn your ingredients into dinner
         </h1>
         <p className="text-sm sm:text-base text-[var(--text-secondary)] max-w-2xl leading-relaxed">
-          List what is waiting in your fridge or pantry, or upload a quick photograph. PantryAI composes three practical recipes and notes any missing essentials.
+          Type the ingredients you have in your fridge or pantry. PantryAI composes three practical recipes and notes any missing essentials.
         </p>
       </section>
 
       {/* Primary Card */}
       <section className="bg-[var(--card)] rounded-xl border border-[var(--card-border)] shadow-[var(--card-shadow)] p-5 sm:p-8 space-y-6 transition-colors duration-200">
-        {/* Input Row */}
-        <div className="space-y-2.5">
-          <label
-            htmlFor="ingredient-input"
-            className="block text-sm font-medium text-[var(--text)]"
-          >
-            Your ingredients
-          </label>
+        {/* Prominent Typed Ingredient Input */}
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <label
+              htmlFor="ingredient-input"
+              className="block text-base font-semibold text-[var(--text)]"
+            >
+              Type the ingredients you have
+            </label>
+            <span className="text-xs text-[var(--text-secondary)]">
+              Try: chicken, garlic, rice
+            </span>
+          </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1 flex items-center">
+          <div className="relative">
+            <div className="relative flex items-center">
+              <Search className="w-4 h-4 text-[var(--text-secondary)] absolute left-4 pointer-events-none" />
               <input
                 ref={ingredientInputRef}
                 id="ingredient-input"
                 type="text"
+                role="combobox"
+                aria-expanded={showAutocomplete}
+                aria-controls="ingredient-autocomplete-list"
+                aria-autocomplete="list"
+                aria-activedescendant={
+                  highlightedIndex >= 0 ? `ingredient-option-${highlightedIndex}` : undefined
+                }
                 value={inputValue}
                 onChange={handleInputChange}
                 onKeyDown={handleInputKeyDown}
-                placeholder="Type an ingredient (e.g., egg, rice, garlic) and press Enter"
-                className="w-full min-h-[48px] pl-4 pr-20 py-2.5 bg-[var(--card)] border border-[var(--subtle)] rounded-lg text-sm text-[var(--text)] placeholder-[var(--text-secondary)] focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/25 transition-colors duration-200"
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => {
+                  setTimeout(() => {
+                    setIsInputFocused(false);
+                    setHighlightedIndex(-1);
+                  }, 120);
+                }}
+                placeholder="Type an ingredient and press Enter or comma..."
+                className="w-full min-h-[54px] pl-11 pr-24 py-3 bg-[var(--surface-nested)] border border-[var(--subtle)] rounded-xl text-base text-[var(--text)] placeholder-[var(--text-secondary)] focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/25 transition-colors duration-200"
               />
               <button
                 type="button"
                 onClick={handleAddButtonClick}
                 disabled={!inputValue.trim()}
-                className="absolute right-1.5 min-h-[36px] px-3 rounded-md bg-[var(--primary-btn)] hover:bg-[var(--primary-btn-hover)] disabled:bg-[var(--subtle)]/40 text-[var(--primary-btn-text)] disabled:text-[var(--text-secondary)] text-xs font-medium flex items-center gap-1 transition-colors duration-200 cursor-pointer disabled:cursor-not-allowed"
+                className="absolute right-2 min-h-[40px] px-3.5 rounded-lg bg-[var(--primary-btn)] hover:bg-[var(--primary-btn-hover)] disabled:bg-[var(--subtle)]/40 text-[var(--primary-btn-text)] disabled:text-[var(--text-secondary)] text-xs sm:text-sm font-medium flex items-center gap-1 transition-colors duration-200 cursor-pointer disabled:cursor-not-allowed"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-4 h-4" />
                 <span>Add</span>
               </button>
             </div>
 
-            {/* Secondary Button: Take or upload photo */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoSelected}
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isScanningPhoto}
-              className="min-h-[48px] px-4 py-2.5 rounded-lg bg-[var(--card)] border border-[var(--primary)] hover:bg-[var(--soft-highlight)]/45 text-[var(--primary-text)] text-sm font-medium flex items-center justify-center gap-2 whitespace-nowrap shrink-0 transition-colors duration-200 cursor-pointer disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
-            >
-              {isScanningPhoto ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Scanning photo...</span>
-                </>
-              ) : (
-                <>
-                  <Camera className="w-4 h-4" />
-                  <span>Take or upload photo</span>
-                </>
-              )}
-            </button>
+            {/* Autocomplete Suggestions Dropdown */}
+            {showAutocomplete && (
+              <ul
+                id="ingredient-autocomplete-list"
+                role="listbox"
+                aria-label="Ingredient suggestions"
+                className="absolute z-30 left-0 right-0 mt-1.5 bg-[var(--card)] border border-[var(--card-border)] rounded-xl shadow-[var(--card-shadow)] overflow-hidden py-1"
+              >
+                {autocompleteMatches.map((suggestion, idx) => {
+                  const isHighlighted = idx === highlightedIndex;
+                  return (
+                    <li
+                      key={suggestion}
+                      id={`ingredient-option-${idx}`}
+                      role="option"
+                      aria-selected={isHighlighted}
+                    >
+                      <button
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleSelectAutocomplete(suggestion);
+                        }}
+                        className={`w-full min-h-[42px] px-4 py-2 text-left text-sm flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                          isHighlighted
+                            ? 'bg-[var(--soft-highlight)] text-[var(--soft-highlight-text)] font-medium'
+                            : 'text-[var(--text)] hover:bg-[var(--surface-nested)]'
+                        }`}
+                      >
+                        <span>{suggestion}</span>
+                        <span className="text-xs opacity-75 flex items-center gap-1">
+                          <Plus className="w-3.5 h-3.5" />
+                          Add
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-[var(--text-secondary)]">
+              Press <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-nested)] border border-[var(--border)] text-[var(--text)] font-sans text-[11px]">Enter</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-nested)] border border-[var(--border)] text-[var(--text)] font-sans text-[11px]">,</kbd> after each ingredient.
+            </p>
+            {duplicateHint && (
+              <p role="status" className="text-xs font-medium text-[var(--accent-on-card)]">
+                {duplicateHint}
+              </p>
+            )}
+          </div>
+
+          {/* Tappable Common Ingredient Chips */}
+          <div className="pt-1 space-y-2">
+            <span className="block text-xs font-medium text-[var(--text-secondary)]">
+              Tap to add common ingredients:
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {COMMON_INGREDIENT_CHIPS.map((item) => {
+                const alreadyAdded = existingSet.has(item);
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    disabled={alreadyAdded}
+                    onClick={() => addIngredientsFromText(item)}
+                    aria-label={alreadyAdded ? `${item} already added` : `Add ${item}`}
+                    className={`min-h-[38px] px-3 py-1.5 rounded-lg border text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-colors duration-200 ${
+                      alreadyAdded
+                        ? 'bg-[var(--surface-nested)] border-[var(--border)] text-[var(--text-secondary)] opacity-60 cursor-default'
+                        : 'bg-[var(--chip-bg)] border-[var(--border)] hover:border-[var(--primary)] hover:bg-[var(--soft-highlight)]/45 text-[var(--chip-text)] cursor-pointer'
+                    }`}
+                  >
+                    {alreadyAdded ? (
+                      <Check className="w-3.5 h-3.5 text-[var(--primary-text)]" />
+                    ) : (
+                      <Plus className="w-3.5 h-3.5 text-[var(--primary-text)]" />
+                    )}
+                    <span>{item}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
-
-        {/* Photo Scan Feedback */}
-        {(photoPreviewUrl || photoMessage || photoError) && (
-          <div className="p-3.5 rounded-lg bg-[var(--surface-nested)] border border-[var(--border)] flex items-start gap-3">
-            {photoPreviewUrl && (
-              <img
-                src={photoPreviewUrl}
-                alt="Uploaded fridge or pantry photo"
-                referrerPolicy="no-referrer"
-                className="w-14 h-14 rounded-md object-cover border border-[var(--border)] shrink-0"
-              />
-            )}
-            <div className="flex-1 min-w-0 text-xs sm:text-sm">
-              {isScanningPhoto && (
-                <p className="text-[var(--text)] font-medium">
-                  Examining your photograph for ingredients...
-                </p>
-              )}
-              {!isScanningPhoto && photoMessage && (
-                <p className="text-[var(--primary-text)] font-medium">
-                  {photoMessage}
-                </p>
-              )}
-              {!isScanningPhoto && photoError && (
-                <p className="text-[var(--warning-on-card)] font-medium flex items-start gap-1.5">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span>{photoError}</span>
-                </p>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setPhotoPreviewUrl(null);
-                setPhotoMessage(null);
-                setPhotoError(null);
-              }}
-              aria-label="Dismiss photo notice"
-              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text)] cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
 
         {/* Ingredient Tags / Example Chips */}
         <div className="space-y-3">
@@ -442,7 +620,7 @@ export function HomeView({
               <div className="p-4 rounded-lg bg-[var(--surface-nested)] border border-[var(--border)] space-y-2.5 transition-colors duration-200">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-medium text-[var(--text-secondary)]">
-                    Quick start — tap example ingredients to try PantryAI:
+                    Quick start — try a sample ingredient trio:
                   </span>
                   <button
                     type="button"

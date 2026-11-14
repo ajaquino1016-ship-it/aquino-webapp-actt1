@@ -180,7 +180,7 @@ function safeJsonParse(text: string | undefined): unknown {
 
 async function startServer() {
   const app = express();
-  app.use(express.json({ limit: '15mb' }));
+  app.use(express.json({ limit: '1mb' }));
 
   // Recipe Generation Endpoint
   app.post('/api/recipes/generate', async (req, res) => {
@@ -384,108 +384,6 @@ Generate 3 realistic recipe ideas (or empty recipes with noMatchReason if strict
       console.error('Error in /api/recipes/generate:', err);
       const message = err instanceof Error ? err.message : 'Unexpected server error.';
       return res.status(500).json({ error: message });
-    }
-  });
-
-  // Vision Ingredient Detection Endpoint
-  app.post('/api/ingredients/detect', async (req, res) => {
-    try {
-      const { imageBase64, mimeType } = req.body as {
-        imageBase64?: string;
-        mimeType?: string;
-      };
-
-      if (!imageBase64 || typeof imageBase64 !== 'string') {
-        return res.status(400).json({ error: 'Please upload a valid image file.' });
-      }
-
-      const base64Data = imageBase64.includes(',')
-        ? imageBase64.split(',')[1]
-        : imageBase64;
-      const safeMimeType =
-        typeof mimeType === 'string' && mimeType.startsWith('image/')
-          ? mimeType
-          : 'image/jpeg';
-
-      const ai = getGeminiClient();
-
-      const responseSchema = {
-        type: Type.OBJECT,
-        properties: {
-          ingredients: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-            description: 'List of visible food ingredient names only (lowercase, concise).',
-          },
-          errorHint: {
-            type: Type.STRING,
-            description: 'Optional friendly message if image is blurry or contains no recognizable food.',
-          },
-        },
-        required: ['ingredients'],
-      };
-
-      let result: { ingredients: string[]; errorHint?: string } | null = null;
-      let lastError: unknown = null;
-
-      for (let attempt = 0; attempt < 2; attempt++) {
-        try {
-          const response = await ai.models.generateContent({
-            model: 'gemini-4-hydrogen',
-            contents: {
-              parts: [
-                {
-                  inlineData: {
-                    mimeType: safeMimeType,
-                    data: base64Data,
-                  },
-                },
-                {
-                  text: 'Inspect this image of a fridge, pantry, or groceries. Return a clean JSON list of recognizable food ingredient names only (e.g., "egg", "tomato", "spinach", "cheddar cheese"). Do not include non-food items or containers unless the food inside is clearly identifiable. If the photo is too blurry, dark, or shows no food ingredients, return an empty array and a short friendly errorHint.',
-                },
-              ],
-            },
-            config: {
-              responseMimeType: 'application/json',
-              responseSchema,
-            },
-          });
-
-          const rawJson = safeJsonParse(response.text) as Record<string, unknown> | null;
-          if (rawJson && Array.isArray(rawJson.ingredients)) {
-            const cleanList = Array.from(
-              new Set(
-                rawJson.ingredients
-                  .filter((i): i is string => typeof i === 'string')
-                  .map((i) => i.trim().toLowerCase())
-                  .filter((i) => i.length > 0 && i.length <= 50)
-              )
-            ).slice(0, 25);
-
-            result = {
-              ingredients: cleanList,
-              errorHint: typeof rawJson.errorHint === 'string' ? rawJson.errorHint : undefined,
-            };
-            break;
-          }
-        } catch (err) {
-          lastError = err;
-        }
-      }
-
-      if (!result) {
-        console.error('Ingredient detection failed:', lastError);
-        return res.status(502).json({
-          error: 'Could not scan that photo. Please try a clearer photo or type your ingredients.',
-        });
-      }
-
-      return res.json(result);
-    } catch (err) {
-      console.error('Error in /api/ingredients/detect:', err);
-      return res.status(500).json({
-        error: 'Failed to process image. Please try again.',
-      });
     }
   });
 

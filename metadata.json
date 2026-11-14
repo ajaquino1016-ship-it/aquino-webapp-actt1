@@ -1,9 +1,7 @@
 {
   "name": "PantryAI",
   "description": "Turn the ingredients you have into realistic recipe ideas using the Gemini API.",
-  "requestFramePermissions": [
-    "camera"
-  ],
+  "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]
